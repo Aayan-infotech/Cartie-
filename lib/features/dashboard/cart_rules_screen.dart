@@ -87,37 +87,47 @@ class CartingRulesScreen extends StatelessWidget {
   }
 
   Widget _buildTabs(BuildContext context) {
-    return Row(
-      children: [
-        _buildTab("Carting Rule", context),
-        const SizedBox(width: 10),
-        _buildTab("Tips", context),
-        const SizedBox(width: 10),
-        _buildTab("Safety", context),
-      ],
+    return SizedBox(
+      height: 50, // You can adjust height as needed
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildTab("Carting Rule", context),
+          const SizedBox(width: 10),
+          _buildTab("Tips", context),
+          const SizedBox(width: 10),
+          _buildTab("Safety", context),
+        ],
+      ),
     );
   }
 
   Widget _buildTab(String title, BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const InfoScreen()),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: colors.primary,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Row(
-          children: [
-            Text(title, style: TextStyle(color: colors.onPrimary)),
-            const SizedBox(width: 5),
-            Icon(Icons.arrow_forward, color: colors.onPrimary, size: 18),
-          ],
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 10), // spacing between tabs
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const InfoScreen()),
+          );
+        },
+        child: Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.primary,
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min, // ✅ ensures Row wraps content
+            children: [
+              Text(title, style: TextStyle(color: colors.onPrimary)),
+              const SizedBox(width: 5),
+              Icon(Icons.arrow_forward, color: colors.onPrimary, size: 18),
+            ],
+          ),
         ),
       ),
     );

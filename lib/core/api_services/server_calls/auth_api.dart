@@ -12,7 +12,6 @@ import 'package:http/http.dart' as http;
 class AuthAPIs {
   AuthAPIs() : super();
 
-  String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
   Future<ApiResponseWithData<Map<String, dynamic>>> login(
       String email, String password) async {
     Map<String, String> data = {
@@ -43,6 +42,7 @@ class AuthAPIs {
       "name": name,
       //"address": state,
     };
+    String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
 
     return await CallHelper()
         .putWithData('api/users/updateProfile/${userId}', data, {});

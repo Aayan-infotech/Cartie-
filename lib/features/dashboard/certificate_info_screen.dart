@@ -6,14 +6,13 @@ class CertificateResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(),
       body: Column(
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Stack(
             alignment: Alignment.center,
             children: [
@@ -164,7 +163,7 @@ class CertificateResultScreen extends StatelessWidget {
 
   Widget _buildInfoBox(String label, String value, ThemeData theme) {
     return Container(
-      width: 110,
+      // width: 110,
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,

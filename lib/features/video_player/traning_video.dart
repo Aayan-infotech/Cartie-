@@ -83,7 +83,7 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      // backgroundColor: Colors.black,
       appBar: AppBar(),
       body: _isInitialized && _chewieController != null
           ? Chewie(controller: _chewieController!)

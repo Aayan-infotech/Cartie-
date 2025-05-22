@@ -1,4 +1,6 @@
 import 'package:cartie/core/models/course_model.dart';
+import 'package:cartie/core/theme/app_theme.dart';
+import 'package:cartie/core/theme/theme_provider.dart';
 import 'package:cartie/core/utills/branded_primary_button.dart';
 import 'package:cartie/features/providers/course_provider.dart';
 import 'package:cartie/features/video_player/assisment_screen.dart';
@@ -326,10 +328,24 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       BrandedPrimaryButton(
                         isEnabled: true,
                         name: "Take Assessment",
+                        // In TrainingDetailScreen's "Take Assessment" button:
                         onPressed: () async {
+                          final courseProvider = Provider.of<CourseProvider>(
+                              context,
+                              listen: false);
+                          final currentVideo = _allVideos[_currentVideoIndex];
+                          final currentSection =
+                              _courseProvider.sections!.sections.firstWhere(
+                            (s) => s.id == currentVideo.sectionId,
+                          );
+
                           await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => AssessmentScreen(),
+                              builder: (context) => AssessmentScreen(
+                                locationId: courseProvider.sections!.location,
+                                sectionId: currentVideo.sectionId,
+                                sectionNumber: currentSection.sectionNumber,
+                              ),
                             ),
                           );
                         },
@@ -346,6 +362,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Widget _buildTabButton(int index, String label, ColorScheme colorScheme) {
     final isSelected = _selectedTabIndex == index;
+    final isLightTheme = Theme.of(context).brightness == Brightness.light;
+    print(isLightTheme);
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _selectedTabIndex = index),
@@ -356,13 +374,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             color: isSelected ? colorScheme.primary : colorScheme.secondary,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Text(label,
-              style: GoogleFonts.montserrat(
-                  color: isSelected
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSecondary,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.normal)),
+          child: Text(
+            label,
+            style: GoogleFonts.montserrat(
+              color: isLightTheme ? Colors.white : colorScheme.onPrimary,
+              //: colorScheme.onSecondary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
         ),
       ),
     );

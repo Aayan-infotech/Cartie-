@@ -9,6 +9,19 @@ class CourseSectionApi extends ApiBase {
     );
   }
 
+  Future<ApiResponseWithData<Map<String, dynamic>>> getAssisment(
+      String locationId, String sectionId, int sectionNumber) async {
+    Map<String, dynamic> data = {
+      "locationId": locationId,
+      "isSectionCompleted": true,
+      "sectionId": sectionId,
+      "sectionNumber": sectionNumber
+    };
+    return await CallHelper().postWithData<Map<String, dynamic>>(
+        'api/user/asses/getAsses', data, {} // Default data in case of failure
+        );
+  }
+
   Future<ApiResponseWithData<Map<String, dynamic>>> updateProgress(
       String locationId,
       String sectionId,

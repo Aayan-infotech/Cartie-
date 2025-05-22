@@ -1,50 +1,40 @@
 class Course {
   final String id;
-  final String admin;
   final String location;
   final List<Section> sections;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int version;
+  final String totalDuration;
+  final int totalVideos;
 
   Course({
     required this.id,
-    required this.admin,
     required this.location,
     required this.sections,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.version,
+    required this.totalDuration,
+    required this.totalVideos,
   });
 
   factory Course.fromJson(Map<String, dynamic>? json) {
-    if (json == null) {
-      throw ArgumentError('Course JSON is null');
-    }
+    if (json == null) throw ArgumentError('Course JSON is null');
 
     return Course(
       id: json['_id'] ?? '',
-      admin: json['admin'] ?? '',
       location: json['locationId'] ?? '',
+      totalDuration: json['totalDuration'] ?? '',
+      totalVideos: json['totalVideos'] ?? 0,
       sections: (json['sections'] as List<dynamic>?)
               ?.map((x) => Section.fromJson(x))
               .toList() ??
           [],
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
-      version: json['__v'] is int ? json['__v'] : 0,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
-      'admin': admin,
-      'location': location,
+      'locationId': location,
+      'totalDuration': totalDuration,
+      'totalVideos': totalVideos,
       'sections': sections.map((x) => x.toJson()).toList(),
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      '__v': version,
     };
   }
 }
@@ -53,6 +43,7 @@ class Section {
   final int sectionNumber;
   final String title;
   final String durationTime;
+   bool isSectionCompleted;
   final List<Video> videos;
   final String id;
 
@@ -60,21 +51,21 @@ class Section {
     required this.sectionNumber,
     required this.title,
     required this.durationTime,
+    required this.isSectionCompleted,
     required this.videos,
     required this.id,
   });
 
   factory Section.fromJson(Map<String, dynamic>? json) {
-    if (json == null) {
-      throw ArgumentError('Section JSON is null');
-    }
+    if (json == null) throw ArgumentError('Section JSON is null');
 
     final sectionId = json['_id'] ?? '';
 
     return Section(
-      sectionNumber: json['sectionNumber'] is int ? json['sectionNumber'] : 0,
+      sectionNumber: json['sectionNumber'] ?? 0,
       title: json['title'] ?? '',
       durationTime: json['durationTime'] ?? '',
+      isSectionCompleted: json['isSectionCompleted'] ?? false,
       videos: (json['videos'] as List<dynamic>?)
               ?.map((x) => Video.fromJson(x, sectionId: sectionId))
               .toList() ??
@@ -88,6 +79,7 @@ class Section {
       'sectionNumber': sectionNumber,
       'title': title,
       'durationTime': durationTime,
+      'isSectionCompleted': isSectionCompleted,
       'videos': videos.map((x) => x.toJson()).toList(),
       '_id': id,
     };
@@ -101,35 +93,36 @@ class Video {
   final String durationTime;
   final int watchedDuration;
   final bool isActive;
+   bool isCompleted;
   final String id;
-  final String sectionId; // New field
+  final String sectionId;
 
   Video({
-    required this.watchedDuration,
     required this.title,
     required this.url,
     required this.description,
     required this.durationTime,
+    required this.watchedDuration,
     required this.isActive,
+    required this.isCompleted,
     required this.id,
     required this.sectionId,
   });
 
   factory Video.fromJson(Map<String, dynamic>? json,
       {required String sectionId}) {
-    if (json == null) {
-      throw ArgumentError('Video JSON is null');
-    }
+    if (json == null) throw ArgumentError('Video JSON is null');
 
     return Video(
-      watchedDuration: int.tryParse(json['watchedDuration'].toString()) ?? 0,
       title: json['title'] ?? '',
       url: json['url'] ?? '',
       description: json['description'] ?? '',
       durationTime: json['durationTime'] ?? '',
-      isActive: json['isActive'] is bool ? json['isActive'] : false,
+      watchedDuration: int.tryParse(json['watchedDuration'].toString()) ?? 0,
+      isActive: json['isActive'] ?? false,
+      isCompleted: json['isCompleted'] ?? false,
       id: json['_id'] ?? '',
-      sectionId: sectionId, // Assign sectionId here
+      sectionId: sectionId,
     );
   }
 
@@ -139,9 +132,11 @@ class Video {
       'url': url,
       'description': description,
       'durationTime': durationTime,
+      'watchedDuration': watchedDuration,
       'isActive': isActive,
+      'isCompleted': isCompleted,
       '_id': id,
-      'sectionId': sectionId, // Include sectionId in JSON
+      'sectionId': sectionId,
     };
   }
 }

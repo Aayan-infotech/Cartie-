@@ -1,5 +1,6 @@
 import 'package:cartie/core/api_services/api_base.dart';
 import 'package:cartie/core/api_services/call_helper.dart';
+import 'package:cartie/core/models/question_submition.dart';
 
 class CourseSectionApi extends ApiBase {
   Future<ApiResponseWithData<Map<String, dynamic>>> getCourseSection() async {
@@ -19,6 +20,14 @@ class CourseSectionApi extends ApiBase {
     };
     return await CallHelper().postWithData<Map<String, dynamic>>(
         'api/user/asses/getAsses', data, {} // Default data in case of failure
+        );
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> submitQuiz(
+      QuestionSubmission questionSubmission) async {
+    Map<String, dynamic> data = questionSubmission.toJson();
+    return await CallHelper().postWithData<Map<String, dynamic>>(
+        'api/user/asses/SubmitTest', data, {} // Default data in case of failure
         );
   }
 

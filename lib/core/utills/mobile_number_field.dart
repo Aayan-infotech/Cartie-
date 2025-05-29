@@ -10,7 +10,7 @@ class CustomPhoneTextField extends StatelessWidget {
   final bool isFilled;
   final bool isEnabled;
   final String? Function(String?)? validator;
-  final TextEditingController? controller; // Added controller
+  final TextEditingController? controller;
 
   const CustomPhoneTextField({
     super.key,
@@ -21,7 +21,7 @@ class CustomPhoneTextField extends StatelessWidget {
     this.isFilled = true,
     this.isEnabled = true,
     this.validator,
-    this.controller, // Constructor parameter
+    this.controller,
   });
 
   @override
@@ -30,11 +30,15 @@ class CustomPhoneTextField extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return CountryCodeTextField(
-      enabled: isEnabled,
       initialCountryCode: initialCountryCode,
       onChanged: onChanged,
-      controller: controller, // Used here
+      controller: controller,
+      enabled: isEnabled,
+      // searchText: 'Search country',
+      // // optional
+
       decoration: InputDecoration(
+      
         labelText: labelText,
         filled: isFilled,
         fillColor: backgroundColor ?? theme.inputDecorationTheme.fillColor,
@@ -71,7 +75,7 @@ class CustomPhoneTextField extends StatelessWidget {
           ),
         ),
       ),
-      // validator: validator, // Uncomment if the CountryCodeTextField supports validator
+      // validator: validator, // Uncomment if the widget supports validation
     );
   }
 }

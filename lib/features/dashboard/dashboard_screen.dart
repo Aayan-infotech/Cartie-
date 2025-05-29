@@ -18,14 +18,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
-    DashboardContent(),
+    HomePage(),
     CertificateScreen(),
     ProfileScreen(),
   ];
- 
+
   @override
   void initState() {
-  
     super.initState();
   }
 

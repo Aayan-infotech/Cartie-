@@ -9,16 +9,14 @@ import 'package:cartie/features/video_player/traning_video.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class DashboardContent extends StatefulWidget {
-  const DashboardContent({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<DashboardContent> createState() => _DashboardContentState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _DashboardContentState extends State<DashboardContent> {
- 
-
+class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     // TODO: implement initState
@@ -52,7 +50,7 @@ class _DashboardContentState extends State<DashboardContent> {
                   onTap: () {
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
-                      return FullScreenVideoScreen(
+                      return const FullScreenVideoScreen(
                         videoUrl:
                             'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
                       );

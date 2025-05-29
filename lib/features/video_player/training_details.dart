@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cartie/core/models/course_model.dart';
 import 'package:cartie/core/theme/app_theme.dart';
 import 'package:cartie/core/theme/theme_provider.dart';
@@ -25,6 +27,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   bool _isInitialized = false;
   int _selectedTabIndex = 1;
   late CourseProvider _courseProvider;
+  bool _isVideoEnded = false;
+  Timer? _progressSaveTimer; // Added for progress throttling
+  DateTime _lastSaveTime = DateTime.now(); // Added for progress throttling
 
   List<String> _videoUrls = [];
   List<Section> _uiSections = [];
@@ -60,10 +65,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       }
 
       if (newVideoUrls.isNotEmpty) {
-        if (!_isInitialized || _currentVideoIndex >= newVideoUrls.length) {
+        if (_currentVideoIndex >= newVideoUrls.length || !_isInitialized) {
           _currentVideoIndex = 0;
-          _initializeVideo(_currentVideoIndex);
         }
+        _initializeVideo(_currentVideoIndex);
       }
     }
   }
@@ -73,52 +78,133 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     int lessonIndex = 1;
     int videoIndexCounter = 0;
 
-    for (var section in course.sections) {
+    for (int i = 0; i < course.sections.length; i++) {
+      final apiSection = course.sections[i];
+      final isFirstSection = i == 0;
+      final isSectionUnlocked = isFirstSection
+          ? true
+          : course.sections[i - 1].test.nextSectionUnlocked;
+
       List<Lesson> lessons = [];
-      for (var video in section.videos) {
+      bool previousCompleted = isSectionUnlocked;
+
+      for (var video in apiSection.videos) {
         lessons.add(Lesson(
           index: lessonIndex++,
           title: video.title,
           time: video.durationTime,
           videoIndex: videoIndexCounter++,
+          isLessionCompleted: video.isCompleted,
+          isUnlocked: previousCompleted,
         ));
+        previousCompleted = video.isCompleted;
       }
+
       uiSections.add(Section(
-        title: 'Section ${section.sectionNumber} - ${section.title}',
-        duration: section.durationTime,
+        isNextSectionUnnlocked: apiSection.test.nextSectionUnlocked,
+        isTestPass: apiSection.test.isSectionCompleted,
+        id: apiSection.id,
+        sectionNumber: apiSection.sectionNumber,
+        title: 'Section ${apiSection.sectionNumber} - ${apiSection.title}',
+        duration: apiSection.durationTime,
         lessons: lessons,
+        isSectionCompleted: apiSection.isSectionCompleted,
       ));
     }
     return uiSections;
   }
 
+  // NEW: Helper to unlock next video in UI
+  void _optimisticallyUnlockNextVideo() {
+    setState(() {
+      // Unlock next lesson in same section
+      for (final section in _uiSections) {
+        for (int i = 0; i < section.lessons.length; i++) {
+          if (section.lessons[i].videoIndex == _currentVideoIndex &&
+              i < section.lessons.length - 1) {
+            section.lessons[i + 1].isUnlocked = true;
+            break;
+          }
+        }
+      }
+    });
+  }
+
   Future<void> _initializeVideo(int index) async {
     if (index >= _videoUrls.length) return;
+    final currentSection = _uiSections.firstWhere(
+      (s) => s.lessons.any((l) => l.videoIndex == index),
+      orElse: () => throw Exception('Section not found'),
+    );
 
+    final lesson = currentSection.lessons.firstWhere(
+      (l) => l.videoIndex == index,
+    );
+
+    if (!lesson.isUnlocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Complete previous videos to unlock this one')),
+      );
+      return;
+    }
     final currentVideo = _allVideos[index];
     final newController =
         VideoPlayerController.networkUrl(Uri.parse(_videoUrls[index]));
     await newController.initialize();
 
-    // Check for saved progress
-    final savedPosition = currentVideo
-        .watchedDuration; //_courseProvider.getVideoProgress(currentVideo.id);
-    if (savedPosition != null) {
-      await newController.seekTo(Duration(seconds: savedPosition));
-    }
-
-    // Add listener to save progress on pause
+    // COMBINED LISTENER (replaces two separate listeners)
     newController.addListener(() async {
-      if (!newController.value.isPlaying &&
-          newController.value.position < newController.value.duration) {
-        await _courseProvider.updateVideoProgress(
-          locationId: _courseProvider.sections!.location,
-          sectionId: currentVideo.sectionId,
-          videoId: currentVideo.id,
-          watchedDuration: newController.value.position.inSeconds.toString(),
-        );
+      if (!mounted) return;
+      final value = newController.value;
+
+      // 1. Handle video completion
+      if (value.duration > Duration.zero &&
+          value.position >= value.duration &&
+          !_isVideoEnded) {
+        _isVideoEnded = true;
+
+        // Only mark as completed if not already completed
+        if (!currentVideo.isCompleted) {
+          await _courseProvider.markVideoCompleted(
+            locationId: _courseProvider.sections!.location,
+            sectionId: currentVideo.sectionId,
+            videoId: currentVideo.id,
+          );
+          // Optimistically unlock next video in UI
+          _optimisticallyUnlockNextVideo();
+        }
+      }
+      // Reset ended flag if not at end
+      else if (value.position < value.duration) {
+        _isVideoEnded = false;
+      }
+
+      // 2. Throttled progress saving
+      if (!value.isPlaying &&
+          value.position < value.duration &&
+          DateTime.now().difference(_lastSaveTime) >
+              const Duration(seconds: 2)) {
+        _lastSaveTime = DateTime.now();
+        _progressSaveTimer?.cancel();
+        _progressSaveTimer = Timer(const Duration(seconds: 1), () async {
+          await _courseProvider.updateVideoProgress(
+            locationId: _courseProvider.sections!.location,
+            sectionId: currentVideo.sectionId,
+            videoId: currentVideo.id,
+            watchedDuration: value.position.inSeconds.toString(),
+          );
+        });
       }
     });
+
+    // Restore saved progress if not completed
+    if (!currentVideo.isCompleted) {
+      final savedPosition = currentVideo.watchedDuration;
+      if (savedPosition != null) {
+        await newController.seekTo(Duration(seconds: savedPosition));
+      }
+    }
 
     if (mounted) {
       _videoController?.dispose();
@@ -168,19 +254,20 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         final currentVideo = _allVideos[_currentVideoIndex];
         if (currentPosition < _videoController!.value.duration) {
           await _courseProvider.updateVideoProgress(
-              locationId: _courseProvider.sections!.id,
-              sectionId: currentVideo.sectionId,
-              videoId: currentVideo.id,
-              watchedDuration: currentPosition.inSeconds.toString());
+            locationId: _courseProvider.sections!.location,
+            sectionId: currentVideo.sectionId,
+            videoId: currentVideo.id,
+            watchedDuration: currentPosition.inSeconds.toString(),
+          );
         }
       }
 
-      _currentVideoIndex = index;
-      await _chewieController?.pause();
+      setState(() {
+        _currentVideoIndex = index;
+        _isInitialized = false;
+      });
+
       await _videoController?.dispose();
-      if (mounted) {
-        setState(() => _isInitialized = false);
-      }
       await _initializeVideo(index);
     }
   }
@@ -188,7 +275,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   @override
   void dispose() {
     _courseProvider.removeListener(_onProviderUpdate);
-    // Save progress when screen is disposed
+    _progressSaveTimer?.cancel(); // Cancel timer on dispose
+
     if (_videoController != null && _videoController!.value.isInitialized) {
       final currentPosition = _videoController!.value.position;
       final currentVideo = _allVideos[_currentVideoIndex];
@@ -237,124 +325,98 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               ? _allVideos[_currentVideoIndex]
               : null;
 
-          return Column(children: [
-            _isInitialized && _videoUrls.isNotEmpty && _chewieController != null
-                ? AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Chewie(controller: _chewieController!),
-                  )
-                : AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Center(
-                      child: _videoUrls.isEmpty
-                          ? const CircularProgressIndicator()
-                          : const Text('No videos available'),
-                    ),
-                  ),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    if (currentVideo != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+          return provider.sections.location.isEmpty
+              ? _buildEmptySectionPlaceholder(colorScheme)
+              : Column(children: [
+                  _isInitialized &&
+                          _videoUrls.isNotEmpty &&
+                          _chewieController != null
+                      ? AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Chewie(controller: _chewieController!),
+                        )
+                      : const AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                      ),
+                      child: ListView(
+                        shrinkWrap: true,
                         children: [
+                          if (currentVideo != null)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.7,
+                                      child: Text(currentVideo.title,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 3,
+                                          style: GoogleFonts.montserrat(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: colorScheme.onSurface)),
+                                    ),
+                                    const Spacer(),
+                                    Text(currentVideo.durationTime,
+                                        style: TextStyle(
+                                            color:
+                                                colorScheme.onSurfaceVariant)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
-                              SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.7,
-                                child: Text(currentVideo.title,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 3,
-                                    style: GoogleFonts.montserrat(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSurface)),
-                              ),
-                              const Spacer(),
-                              Text(currentVideo.durationTime,
+                              Icon(Icons.video_collection,
+                                  color: colorScheme.onSurfaceVariant,
+                                  size: 16),
+                              const SizedBox(width: 4),
+                              Text('$totalVideos Videos',
                                   style: TextStyle(
                                       color: colorScheme.onSurfaceVariant)),
+                              const SizedBox(width: 12),
+                              Icon(Icons.access_time,
+                                  color: colorScheme.onSurfaceVariant,
+                                  size: 16),
+                              const SizedBox(width: 4),
+                              Text(provider.sections.totalDuration,
+                                  style: TextStyle(
+                                      color: colorScheme.onSurfaceVariant)),
+                              const Spacer(),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              _buildTabButton(0, 'About', colorScheme),
+                              const SizedBox(width: 10),
+                              _buildTabButton(1, 'Curriculum', colorScheme),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          _selectedTabIndex == 0
+                              ? _buildAboutTab(textTheme, colorScheme,
+                                  provider.sections?.location ?? '')
+                              : _buildCurriculumTab(colorScheme),
+                          const SizedBox(height: 20),
                         ],
                       ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.video_collection,
-                            color: colorScheme.onSurfaceVariant, size: 16),
-                        const SizedBox(width: 4),
-                        Text('$totalVideos Videos',
-                            style:
-                                TextStyle(color: colorScheme.onSurfaceVariant)),
-                        const SizedBox(width: 12),
-                        Icon(Icons.access_time,
-                            color: colorScheme.onSurfaceVariant, size: 16),
-                        const SizedBox(width: 4),
-                        Text('42 Hours',
-                            style:
-                                TextStyle(color: colorScheme.onSurfaceVariant)),
-                        const Spacer(),
-                        Text('\$28',
-                            style: TextStyle(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.bold)),
-                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        _buildTabButton(0, 'About', colorScheme),
-                        const SizedBox(width: 10),
-                        _buildTabButton(1, 'Curriculum', colorScheme),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    _selectedTabIndex == 0
-                        ? _buildAboutTab(textTheme, colorScheme,
-                            _courseProvider.sections?.location ?? '')
-                        : _buildCurriculumTab(colorScheme),
-                    const SizedBox(height: 20),
-                    if (_selectedTabIndex != 0)
-                      BrandedPrimaryButton(
-                        isEnabled: true,
-                        name: "Take Assessment",
-                        // In TrainingDetailScreen's "Take Assessment" button:
-                        onPressed: () async {
-                          final courseProvider = Provider.of<CourseProvider>(
-                              context,
-                              listen: false);
-                          final currentVideo = _allVideos[_currentVideoIndex];
-                          final currentSection =
-                              _courseProvider.sections!.sections.firstWhere(
-                            (s) => s.id == currentVideo.sectionId,
-                          );
-
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => AssessmentScreen(
-                                locationId: courseProvider.sections!.location,
-                                sectionId: currentVideo.sectionId,
-                                sectionNumber: currentSection.sectionNumber,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ]);
+                  ),
+                ]);
         },
       ),
     );
@@ -362,8 +424,6 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Widget _buildTabButton(int index, String label, ColorScheme colorScheme) {
     final isSelected = _selectedTabIndex == index;
-    final isLightTheme = Theme.of(context).brightness == Brightness.light;
-    print(isLightTheme);
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _selectedTabIndex = index),
@@ -377,8 +437,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           child: Text(
             label,
             style: GoogleFonts.montserrat(
-              color: isLightTheme ? Colors.white : colorScheme.onPrimary,
-              //: colorScheme.onSecondary,
+              color: isSelected ? Colors.white : colorScheme.onSecondary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
@@ -423,22 +482,30 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   ...section.lessons.map(
                     (lesson) => ListTile(
                       contentPadding: EdgeInsets.zero,
-                      onTap: () => _changeVideo(lesson.videoIndex),
+                      onTap: lesson.isUnlocked
+                          ? () => _changeVideo(lesson.videoIndex)
+                          : null,
                       leading: Icon(
-                        _currentVideoIndex == lesson.videoIndex
-                            ? Icons.pause
-                            : Icons.play_circle_fill,
-                        color: _currentVideoIndex == lesson.videoIndex
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
+                        lesson.isUnlocked
+                            ? (_currentVideoIndex == lesson.videoIndex
+                                ? Icons.pause
+                                : Icons.play_circle_fill)
+                            : Icons.lock_outline,
+                        color: lesson.isUnlocked
+                            ? (_currentVideoIndex == lesson.videoIndex
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant)
+                            : Colors.grey,
                         size: 28,
                       ),
                       title: Text(
                         '${lesson.index}. ${lesson.title}',
                         style: GoogleFonts.montserrat(
-                          color: _currentVideoIndex == lesson.videoIndex
-                              ? colorScheme.primary
-                              : colorScheme.onSurface,
+                          color: lesson.isUnlocked
+                              ? (_currentVideoIndex == lesson.videoIndex
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurface)
+                              : Colors.grey,
                           fontWeight: _currentVideoIndex == lesson.videoIndex
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -446,33 +513,106 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       ),
                       subtitle: Text(lesson.time,
                           style: GoogleFonts.montserrat(
-                            color: _currentVideoIndex == lesson.videoIndex
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
+                            color: lesson.isUnlocked
+                                ? (_currentVideoIndex == lesson.videoIndex
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurfaceVariant)
+                                : Colors.grey,
                           )),
-                      trailing: _currentVideoIndex == lesson.videoIndex
+                      trailing: lesson.isLessionCompleted
                           ? Icon(Icons.check_circle,
                               color: colorScheme.primary, size: 20)
-                          : null,
+                          : (lesson.isUnlocked
+                              ? null
+                              : Icon(Icons.lock, size: 20)),
                     ),
                   ),
                   const SizedBox(height: 16),
+                  BrandedPrimaryButton(
+                    isEnabled:
+                        section.isSectionCompleted && !section.isTestPass,
+                    name: section.isTestPass ? "Passed" : "Take Assessment",
+                    onPressed: () async {
+                      if (!section.isSectionCompleted) return;
+
+                      final courseProvider =
+                          Provider.of<CourseProvider>(context, listen: false);
+                      await courseProvider.fetchQuiz(
+                        locationId: _courseProvider.sections.location,
+                        sectionId: section.id,
+                        sectionNumber: section.sectionNumber,
+                      );
+
+                      if (mounted) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AssessmentScreen(
+                              locationId: _courseProvider.sections.location,
+                              sectionId: section.id,
+                              sectionNumber: section.sectionNumber,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ))
           .toList(),
     );
   }
+
+  Widget _buildEmptySectionPlaceholder(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.video_library_sharp,
+              size: 48, color: colorScheme.onSurfaceVariant),
+          const SizedBox(height: 16),
+          Text('No videos available in this location',
+              style: GoogleFonts.montserrat(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              )),
+          const SizedBox(height: 8),
+          Text('Check back later for updates!',
+              style: GoogleFonts.montserrat(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              )),
+        ],
+      ),
+    );
+  }
 }
 
 class Section {
+  final String id;
+  final int sectionNumber;
   final String title;
   final String duration;
   final List<Lesson> lessons;
+  bool isSectionCompleted;
+  bool isNextSectionUnnlocked;
+  bool isTestPass;
 
   Section({
+    required this.isNextSectionUnnlocked,
+    required this.isTestPass,
+    required this.id,
+    required this.sectionNumber,
     required this.title,
     required this.duration,
     required this.lessons,
+    required this.isSectionCompleted,
   });
 }
 
@@ -481,11 +621,15 @@ class Lesson {
   final String title;
   final String time;
   final int videoIndex;
+  bool isLessionCompleted;
+  bool isUnlocked;
 
   Lesson({
+    required this.isUnlocked,
     required this.index,
     required this.title,
     required this.time,
     required this.videoIndex,
+    required this.isLessionCompleted,
   });
 }

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class InfoScreen extends StatelessWidget {
-  const InfoScreen({super.key});
+  final String title;
+  final String content;
+  
+  const InfoScreen({
+    super.key,
+    required this.title,
+    required this.content,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +22,7 @@ class InfoScreen extends StatelessWidget {
         backgroundColor: colors.background,
         iconTheme: IconThemeData(color: colors.onBackground),
         title: Text(
-          "Lorem Ipsum",
+          title, // Dynamic title
           style: textTheme.titleLarge?.copyWith(
             color: colors.onBackground,
             fontWeight: FontWeight.w600,
@@ -31,7 +38,7 @@ class InfoScreen extends StatelessWidget {
             /// Centered heading
             Center(
               child: Text(
-                "Lorem",
+                title, // Dynamic heading
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colors.onBackground,
@@ -41,9 +48,9 @@ class InfoScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            /// Subheading
+            /// Subheading (kept static as per original design)
             Text(
-              "Lorem Ipsum",
+              "Key Information",
               style: textTheme.bodyLarge?.copyWith(
                 color: colors.primary,
                 fontWeight: FontWeight.bold,
@@ -52,21 +59,21 @@ class InfoScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            /// Info Cards
+            /// Info Cards (kept static as per original UI)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                buildInfoCard("Lorem", "10", colors),
-                buildInfoCard("Lorem", "30", colors),
-                buildInfoCard("Lorem", "32", colors),
+                buildInfoCard("Priority", "High", colors),
+                buildInfoCard("Category", "Safety", colors),
+                buildInfoCard("Updated", "2024", colors),
               ],
             ),
 
             const SizedBox(height: 24),
 
-            /// About Section
+            /// About Section with dynamic content
             Text(
-              "About",
+              "Detailed Information",
               style: textTheme.bodyLarge?.copyWith(
                 color: colors.onBackground,
                 fontWeight: FontWeight.bold,
@@ -74,7 +81,7 @@ class InfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "This article provides principles and steps for creating a realistic and achievable plan, including clarifying goals, breaking down big goals, creating a specific plan, establishing time management skills, setting up feedback mechanisms, and maintaining perseverance and discipline.",
+              content, // Dynamic content
               style: textTheme.bodyMedium?.copyWith(
                 color: colors.onBackground.withOpacity(0.7),
                 height: 1.5,
@@ -86,6 +93,7 @@ class InfoScreen extends StatelessWidget {
     );
   }
 
+  // Kept unchanged from original implementation
   Widget buildInfoCard(String title, String value, ColorScheme colors) {
     return Container(
       width: 90,

@@ -7,12 +7,14 @@ import 'package:cartie/features/login_signup_flow/splash_screen.dart';
 import 'package:cartie/features/login_signup_flow/welcome_screen.dart';
 import 'package:cartie/features/providers/auth_provider.dart';
 import 'package:cartie/features/providers/course_provider.dart';
+import 'package:cartie/features/providers/dash_board_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:hive/hive.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -38,6 +40,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => UserViewModel()),
         ChangeNotifierProvider(create: (_) => CourseProvider()),
+        ChangeNotifierProvider(create: (_) => DashBoardProvider()),
       ],
       child: const MyApp(),
     ),

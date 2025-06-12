@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:cartie/core/api_services/call_helper.dart';
-import 'package:cartie/core/utills/constant.dart';
+import 'package:cartie/core/utills/constant.dart' as constant;
 import 'package:cartie/core/utills/shared_pref_util.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -72,7 +72,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
 
   Future<void> _fetchGeofenceData() async {
     try {
-      final token = SharedPrefUtil.getValue(accessTokenPref, "")
+      final token = SharedPrefUtil.getValue(constant.accessTokenPref, "")
           as String; // Or however you retrieve your token
 
       final response = await http.get(
@@ -161,6 +161,8 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: colors.background,
 
@@ -170,10 +172,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
         iconTheme: IconThemeData(color: colors.onBackground),
         title: Text(
           'Training Area',
-          style: textTheme.headlineSmall?.copyWith(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
+          style: theme.textTheme.displayLarge,
         ),
       ),
       // appBar: AppBar(

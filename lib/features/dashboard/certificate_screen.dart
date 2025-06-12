@@ -8,6 +8,7 @@ class CertificateScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -17,10 +18,7 @@ class CertificateScreen extends StatelessWidget {
         iconTheme: IconThemeData(color: colors.onBackground),
         title: Text(
           'Certificate',
-          style: textTheme.headlineSmall?.copyWith(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
+          style: theme.textTheme.displayLarge,
         ),
       ),
       body: Padding(

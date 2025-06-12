@@ -73,10 +73,7 @@ class _LSVPracticesScreenState extends State<LSVPracticesScreen> {
             elevation: 0,
             title: Text(
               'LSV practices',
-              style: textTheme.titleLarge?.copyWith(
-                color: colors.onBackground,
-                fontWeight: FontWeight.bold,
-              ),
+              style: theme.textTheme.displayLarge,
             ),
           ),
           body: Padding(

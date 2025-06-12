@@ -305,11 +305,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         foregroundColor: colorScheme.onBackground,
         title: Text(
           'Training',
-          style: GoogleFonts.montserrat(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onBackground,
-          ),
+          style: theme.textTheme.displayLarge,
         ),
       ),
       body: Consumer<CourseProvider>(

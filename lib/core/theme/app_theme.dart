@@ -14,7 +14,7 @@ class AppTheme {
         ),
         textTheme: GoogleFonts.poppinsTextTheme().copyWith(
           displayLarge: const TextStyle(
-              fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+              fontSize: 24, fontWeight: FontWeight.w600, color: Colors.black),
           bodyLarge: const TextStyle(fontSize: 16, color: Colors.black87),
           bodyMedium: const TextStyle(fontSize: 14, color: Colors.black54),
         ),

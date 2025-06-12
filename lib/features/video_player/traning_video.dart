@@ -104,9 +104,9 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         forceMaterialTransparency: true,
-        title: const Text(
+        title: Text(
           "Safety Video",
-          style: TextStyle(fontWeight: FontWeight.normal),
+          style: theme.textTheme.displayLarge,
         ),
         backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: theme.appBarTheme.elevation,

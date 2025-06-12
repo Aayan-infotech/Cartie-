@@ -49,10 +49,7 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
         iconTheme: IconThemeData(color: colors.onBackground),
         title: Text(
           "Carting Rules",
-          style: textTheme.headlineSmall?.copyWith(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
+            style: theme.textTheme.displayLarge,
         ),
         elevation: 0,
       ),

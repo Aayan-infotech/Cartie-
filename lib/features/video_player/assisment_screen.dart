@@ -91,28 +91,12 @@ class _AssessmentScreenState extends State<AssessmentScreen>
     }
   }
 
-  // void _calculateScore() {
-  //   final provider = context.read<CourseProvider>();
-  //   provider.completeAssessment();
-  //   int score = 0;
-  //   final questions = provider.quiz?.questions ?? [];
-
-  //   for (int i = 0; i < questions.length; i++) {
-  //     if (_selectedAnswers[i] != null &&
-  //         questions[i].options[_selectedAnswers[i]!].isCorrect) {
-  //       score++;
-  //     }
-  //   }
-
-  //   setState(() {
-  //     _score = score;
-  //     _showResults = true;
-  //   });
-  // }
+  bool isLoading = false;
   void _calculateScore() async {
+    setState(() {
+      isLoading = true;
+    });
     final provider = context.read<CourseProvider>();
-    provider.completeAssessment();
-    int score = 0;
     final questions = provider.quiz?.questions ?? [];
 
     // Check if all questions are answered
@@ -125,6 +109,8 @@ class _AssessmentScreenState extends State<AssessmentScreen>
       return;
     }
 
+    // Calculate score locally
+    int score = 0;
     List<QuestionAnswer> questionAnswers = [];
     for (int i = 0; i < questions.length; i++) {
       final selectedIndex = _selectedAnswers[i]!;
@@ -133,13 +119,19 @@ class _AssessmentScreenState extends State<AssessmentScreen>
       }
       questionAnswers.add(
         QuestionAnswer(
-          questionId: questions[i].id, // Ensure Question model has an `id`
+          questionId: questions[i].id,
           selectedOption: questions[i].options[selectedIndex].id,
         ),
       );
     }
 
-    // Create QuestionSubmission instance
+    // Immediately show results
+    setState(() {
+      _score = score;
+      _showResults = true;
+    });
+
+    // Submit in background
     final submission = QuestionSubmission(
       locationId: widget.locationId,
       sectionId: widget.sectionId,
@@ -148,15 +140,13 @@ class _AssessmentScreenState extends State<AssessmentScreen>
       questions: questionAnswers,
     );
 
-    // Submit the quiz data
+    provider.completeAssessment();
     var response = await provider.submitQuiz(submission);
     if (response.success) {
       await provider.fetchCourseSections();
     }
-
     setState(() {
-      _score = score;
-      _showResults = true;
+      isLoading = false;
     });
   }
 
@@ -177,25 +167,45 @@ class _AssessmentScreenState extends State<AssessmentScreen>
 
   void _showPauseDialog() {
     final provider = context.read<CourseProvider>();
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     provider.pauseAssessment();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Assessment Paused"),
-        content: const Text("Do you want to resume or exit the assessment?"),
+        backgroundColor: colors.background,
+        title: Text(
+          "Assessment Paused",
+          style: textTheme.titleLarge?.copyWith(color: colors.onBackground),
+        ),
+        content: Text(
+          "Do you want to resume or exit the assessment?",
+          style: textTheme.bodyMedium?.copyWith(color: colors.onBackground),
+        ),
         actions: [
           TextButton(
             onPressed: () {
               provider.resumeAssessment();
               Navigator.pop(context);
             },
+            style: TextButton.styleFrom(
+              foregroundColor: colors.primary,
+              textStyle: textTheme.labelLarge,
+            ),
             child: const Text("Resume"),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Exit assessment screen
             },
+            style: TextButton.styleFrom(
+              foregroundColor: colors.error,
+              textStyle: textTheme.labelLarge,
+            ),
             child: const Text("Exit"),
           ),
         ],
@@ -204,19 +214,27 @@ class _AssessmentScreenState extends State<AssessmentScreen>
   }
 
   Widget _buildStartScreen() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             "Section ${widget.sectionNumber} Assessment",
-            style: const TextStyle(color: Colors.white, fontSize: 24),
+            style: textTheme.headlineMedium?.copyWith(
+              color: colors.onBackground,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 30),
-          const Icon(
+          Icon(
             Icons.quiz,
             size: 80,
-            color: Colors.red,
+            color: colors.primary,
           ),
           const SizedBox(height: 30),
           ElevatedButton(
@@ -225,24 +243,28 @@ class _AssessmentScreenState extends State<AssessmentScreen>
               setState(() {});
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[800],
+              backgroundColor: colors.primary,
+              foregroundColor: colors.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
+              textStyle: textTheme.titleLarge,
+              elevation: 4,
             ),
-            child:
-                const Text("Start Assessment", style: TextStyle(fontSize: 18)),
+            child: const Text("Start Assessment"),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuestionPage(Question question, int index, QuizSection quiz) {
+  Widget _buildQuestionPage(Question question, int index) {
     final provider = context.read<CourseProvider>();
     final isLastQuestion = index == provider.quiz!.questions.length - 1;
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return SingleChildScrollView(
       child: Padding(
@@ -252,22 +274,22 @@ class _AssessmentScreenState extends State<AssessmentScreen>
           children: [
             LinearProgressIndicator(
               value: (index + 1) / provider.quiz!.questions.length,
-              backgroundColor: Colors.grey[800],
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+              backgroundColor: colors.surfaceVariant,
+              valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
             ),
             const SizedBox(height: 20),
             Text(
               "Question ${index + 1}",
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: Colors.white70,
+              style: textTheme.titleLarge?.copyWith(
+                color: colors.onBackground.withOpacity(0.7),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               question.question,
-              style: theme.textTheme.headlineSmall?.copyWith(
+              style: textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: colors.onBackground,
               ),
             ),
             const SizedBox(height: 30),
@@ -292,25 +314,31 @@ class _AssessmentScreenState extends State<AssessmentScreen>
             }),
             const SizedBox(height: 30),
             if (!_showResults) _buildNavigationControls(isLastQuestion, index),
+            const SizedBox(height: 20),
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.timer, color: Colors.red),
+                    Icon(Icons.timer, color: colors.error),
+                    const SizedBox(width: 8),
                     Text(
                       _formatTime(provider.elapsedSeconds),
-                      style: const TextStyle(color: Colors.red, fontSize: 18),
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: colors.error,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
                 IconButton(
                   icon: const Icon(Icons.pause),
                   onPressed: _showPauseDialog,
-                  color: Colors.red,
+                  color: colors.error,
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -359,20 +387,26 @@ class _AssessmentScreenState extends State<AssessmentScreen>
 
   Widget _buildResultsScreen() {
     final provider = context.read<CourseProvider>();
-    final totalQuestions = provider.quiz?.questions.length ?? 0;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    final totalQuestions = _selectedAnswers.length;
     final percentage = (_score / totalQuestions) * 100;
-    final isPassed = percentage >= 60; // Adjust passing threshold as needed
+    final isPassed = percentage >= 60;
 
     return Center(
       child: Container(
         margin: const EdgeInsets.all(20),
         padding: const EdgeInsets.all(25),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: colors.surfaceVariant,
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Colors.red.withOpacity(0.2),
+              color: isPassed
+                  ? colors.primary.withOpacity(0.2)
+                  : colors.error.withOpacity(0.2),
               spreadRadius: 5,
               blurRadius: 10,
             ),
@@ -383,23 +417,21 @@ class _AssessmentScreenState extends State<AssessmentScreen>
           children: [
             Icon(
               isPassed ? Icons.check_circle : Icons.error,
-              color: isPassed ? Colors.green : Colors.red,
+              color: isPassed ? colors.primary : colors.error,
               size: 80,
             ),
             const SizedBox(height: 20),
             Text(
               isPassed ? "Assessment Passed!" : "Assessment Failed",
-              style: TextStyle(
-                fontSize: 28,
+              style: textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isPassed ? Colors.green : Colors.red,
+                color: isPassed ? colors.primary : colors.error,
               ),
             ),
             const SizedBox(height: 25),
             _buildResultRow("Total Questions:", "$totalQuestions"),
             _buildResultRow("Correct Answers:", "$_score"),
             _buildResultRow("Your Score:", "${percentage.toStringAsFixed(1)}%"),
-            _buildResultRow("Attempt Number:", "2"), // From response data
             const SizedBox(height: 30),
             Column(
               children: [
@@ -407,7 +439,8 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                   icon: const Icon(Icons.arrow_back),
                   label: const Text("Back to Course"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[800],
+                    backgroundColor: colors.error,
+                    foregroundColor: colors.onError,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
@@ -416,25 +449,6 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                   ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                SizedBox(
-                  height: 20,
-                ),
-                if (!isPassed)
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text("Try Again"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[800],
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    onPressed: () {
-                      // Add retry logic
-                    },
-                  ),
               ],
             ),
           ],
@@ -444,6 +458,10 @@ class _AssessmentScreenState extends State<AssessmentScreen>
   }
 
   Widget _buildResultRow(String label, String value) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -451,15 +469,15 @@ class _AssessmentScreenState extends State<AssessmentScreen>
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.onSurfaceVariant,
               fontSize: 16,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.onSurface,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -473,6 +491,9 @@ class _AssessmentScreenState extends State<AssessmentScreen>
   Widget build(BuildContext context) {
     final provider = context.watch<CourseProvider>();
     final quiz = provider.quiz;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    // final textTheme = theme.textTheme;
 
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -481,11 +502,12 @@ class _AssessmentScreenState extends State<AssessmentScreen>
             ? null
             : provider.assessmentInProgress
                 ? AppBar(
+                    backgroundColor: colors.background,
+                    iconTheme: IconThemeData(color: colors.onBackground),
                     title: Text(
                       "Section ${widget.sectionNumber} Assessment",
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: colors.onBackground),
                     ),
-                    backgroundColor: Colors.black,
                     actions: [
                       if (quiz != null && quiz.questions.isNotEmpty)
                         Padding(
@@ -501,15 +523,15 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                     ],
                   )
                 : null,
-        body: provider.isLoading
+        body: provider.isLoading || isLoading
             ? const Center(child: CircularProgressIndicator())
             : !provider.assessmentInProgress && !_showResults
                 ? _buildStartScreen()
                 : quiz?.questions.isEmpty ?? true
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           "No questions available",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(color: colors.onBackground),
                         ),
                       )
                     : _showResults
@@ -519,7 +541,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: quiz!.questions.length,
                             itemBuilder: (context, index) => _buildQuestionPage(
-                                quiz.questions[index], index, quiz),
+                                quiz.questions[index], index),
                           ),
       ),
     );
@@ -542,29 +564,35 @@ class _OptionCard extends StatelessWidget {
   });
 
   Color _getBorderColor(BuildContext context) {
-    if (!showResults) return isSelected ? Colors.red : Colors.transparent;
-    if (isSelected) return isCorrect ? Colors.green : Colors.red;
-    return isCorrect ? Colors.green.withOpacity(0.5) : Colors.transparent;
+    final colors = Theme.of(context).colorScheme;
+    if (!showResults) return isSelected ? colors.error : Colors.transparent;
+    if (isSelected) return isCorrect ? colors.primary : colors.error;
+    return isCorrect ? colors.primary.withOpacity(0.5) : Colors.transparent;
   }
 
   Color _getTextColor(BuildContext context) {
-    if (!showResults) return isSelected ? Colors.red : Colors.white;
-    if (isSelected) return isCorrect ? Colors.green : Colors.red;
-    return isCorrect ? Colors.green : Colors.white;
+    final colors = Theme.of(context).colorScheme;
+    if (!showResults) return isSelected ? colors.error : colors.onSurface;
+    if (isSelected) return isCorrect ? colors.primary : colors.error;
+    return isCorrect ? colors.primary : colors.onSurface;
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.grey[900],
+            color: colors.surfaceVariant,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: _getBorderColor(context),
@@ -585,16 +613,16 @@ class _OptionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   optionText,
-                  style: TextStyle(
+                  style: textTheme.bodyLarge?.copyWith(
                     color: _getTextColor(context),
-                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               if (showResults && isSelected)
                 Icon(
                   isCorrect ? Icons.check_circle : Icons.cancel,
-                  color: isCorrect ? Colors.green : Colors.red,
+                  color: isCorrect ? colors.primary : colors.error,
                 ),
             ],
           ),

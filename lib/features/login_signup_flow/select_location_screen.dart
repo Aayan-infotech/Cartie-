@@ -52,6 +52,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
             .toList();
       });
     }
+    print(_predictions);
   }
 
   Future<void> _selectPlace(String placeId) async {
@@ -93,13 +94,18 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
 
     try {
       final viewModel = Provider.of<UserViewModel>(context, listen: false);
-   var response=   await viewModel.addLocation(placeName, position);
-      print("Location added: $placeName at $position");
-
-      AppTheme.showSuccessDialog(context, "Location updated successfully",
-          onConfirm: () {
-        Navigator.of(context).pop();
-      });
+      var response = await viewModel.addLocation(placeName, position);
+      if (response.success) {
+        print("Location added: $placeName at $position");
+        AppTheme.showSuccessDialog(context, "Location updated successfully",
+            onConfirm: () {
+          Navigator.of(context).pop();
+        });
+      } else {
+        AppTheme.showSuccessDialog(context, response.message, onConfirm: () {
+          Navigator.of(context).pop();
+        });
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to add location: $e")),

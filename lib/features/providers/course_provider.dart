@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/api_services/server_calls/course_section_api.dart';
 import 'package:cartie/core/models/course_model.dart';
@@ -180,6 +179,22 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
+  int convertToSeconds(String time) {
+    int minutes = 0;
+    int seconds = 0;
+
+    if (time.contains('m')) {
+      minutes = int.parse(time.split('m')[0].trim());
+      time = time.split('m')[1].trim();
+    }
+
+    if (time.contains('s')) {
+      seconds = int.parse(time.replaceAll('s', '').trim());
+    }
+
+    return (minutes * 60) + seconds;
+  }
+
   Future<ApiResponseWithData> submitQuiz(
       QuestionSubmission question_submition) async {
     var response = await _api.submitQuiz(question_submition);
@@ -188,12 +203,14 @@ class CourseProvider extends ChangeNotifier {
   }
 
   // ✅ NEW METHOD TO CALL updateProgress
- Future<void> updateVideoProgress({
+  Future<void> updateVideoProgress({
     required String locationId,
     required String sectionId,
     required String videoId,
     required String watchedDuration,
   }) async {
+    print("updateProgressCalled");
+
     try {
       final course = _sections;
       if (course == null) return;
@@ -212,13 +229,6 @@ class CourseProvider extends ChangeNotifier {
       video.watchedDuration = int.tryParse(watchedDuration) ?? 0;
 
       // Check if video should be marked completed
-      if (video.watchedDuration >= video.watchedDuration && !video.isCompleted) {
-        await markVideoCompleted(
-          locationId: locationId,
-          sectionId: sectionId,
-          videoId: videoId,
-        );
-      }
 
       // Update backend
       final response = await _api.updateProgress(
@@ -230,10 +240,18 @@ class CourseProvider extends ChangeNotifier {
 
       if (!response.success) {
         print("Failed to update progress: ${response.message}");
+      } else {
+        int videoDuration = convertToSeconds(video.durationTime);
+        if (video.watchedDuration >= videoDuration && !video.isCompleted) {
+          await markVideoCompleted(
+            locationId: locationId,
+            sectionId: sectionId,
+            videoId: videoId,
+          );
+        }
       }
     } catch (e) {
       print("Error updating video progress: $e");
     }
   }
-
 }

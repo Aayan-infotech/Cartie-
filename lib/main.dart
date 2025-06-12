@@ -18,8 +18,7 @@ import 'package:hive/hive.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Ensure async bindings are available
+  WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Shared Preferences
   await SharedPrefUtil.init();
@@ -31,13 +30,17 @@ void main() async {
   // Initialize custom DbManager caches
   DbManager().cache = await DbManager().initCacheUsingName(localCacheName);
   DbManager().pendingCache =
-      await DbManager().initCacheUsingName(localPendingCacheName);
+  await DbManager().initCacheUsingName(localPendingCacheName);
 
-  // Start the app
+  // Initialize ThemeProvider before runApp
+  final themeProvider = ThemeProvider();
+  await themeProvider.init();
+
+  // Run the app
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         ChangeNotifierProvider(create: (_) => UserViewModel()),
         ChangeNotifierProvider(create: (_) => CourseProvider()),
         ChangeNotifierProvider(create: (_) => DashBoardProvider()),

@@ -45,6 +45,10 @@ class _LSVPracticesScreenState extends State<LSVPracticesScreen> {
 
         if (provider.error != null) {
           return Scaffold(
+            appBar: AppBar(
+              backgroundColor: colors.background,
+              elevation: 0,
+            ),
             backgroundColor: colors.background,
             body: Center(child: Text(provider.error!)),
           );
@@ -53,6 +57,10 @@ class _LSVPracticesScreenState extends State<LSVPracticesScreen> {
         final lsvInfo = provider.lsvInfo;
         if (lsvInfo == null) {
           return Scaffold(
+            appBar: AppBar(
+              backgroundColor: colors.background,
+              elevation: 0,
+            ),
             backgroundColor: colors.background,
             body: const Center(child: Text('No LSV data available')),
           );
@@ -63,10 +71,6 @@ class _LSVPracticesScreenState extends State<LSVPracticesScreen> {
           appBar: AppBar(
             backgroundColor: colors.background,
             elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: colors.onBackground),
-              onPressed: () => Navigator.pop(context),
-            ),
             title: Text(
               'LSV practices',
               style: textTheme.titleLarge?.copyWith(

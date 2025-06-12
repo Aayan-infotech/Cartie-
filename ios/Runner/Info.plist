@@ -13,6 +13,7 @@
 
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	
 
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
@@ -85,6 +86,6 @@
 
 	<!-- ✅ Google Maps API Key -->
 	<key>GMSApiKey</key>
-	<string>AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc</string>
+	<string>AIzaSyDgsuj1uAGFuJBsUaTdl0lFllr56DnIp9Y</string>
 </dict>
 </plist>

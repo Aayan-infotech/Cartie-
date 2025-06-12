@@ -27,6 +27,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _addressController;
 
   File? _profileImage;
+  bool isChange = false;
 
   @override
   void initState() {
@@ -35,7 +36,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     _nameController = TextEditingController(text: userViewModel.user.name);
     _emailController = TextEditingController(text: userViewModel.user.email);
-    _phoneController = TextEditingController(text: userViewModel.user.mobile);
+    final fullNumber = userViewModel.user.mobile ?? '';
+    final phoneWithoutCountryCode =
+        fullNumber.startsWith('+1') ? fullNumber.substring(2) : fullNumber;
+
+    _phoneController = TextEditingController(text: phoneWithoutCountryCode);
+
     _addressController =
         TextEditingController(text: userViewModel.user.address);
   }
@@ -99,7 +105,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         forceMaterialTransparency: true,
-        title: const Text("Profile Information"),
+        title: Text(
+          "Profile Information",
+          style: theme.textTheme.displayLarge,
+        ),
         backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: theme.appBarTheme.elevation,
         iconTheme: theme.iconTheme,
@@ -159,6 +168,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       controller: _nameController,
                       labelText: "Name",
                       isEnabled: true,
+                      onChanged: (value) {
+                        setState(() {
+                          isChange = true;
+                        });
+                      },
                       prefix: Icon(Icons.person_outline,
                           color: theme.textTheme.bodyLarge?.color),
                     ),
@@ -173,7 +187,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 20),
                     CustomPhoneTextField(
-                      initialCountryCode: 'IN',
+                      initialCountryCode: 'US',
                       labelText: 'Phone Number',
                       isEnabled: false,
                       controller: _phoneController,
@@ -192,7 +206,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 32),
                     BrandedPrimaryButton(
-                      isEnabled: !userProvider.isLoading,
+                      isEnabled: !userProvider.isLoading && isChange,
                       name: "Save Changes",
                       onPressed: _saveProfile,
                     ),

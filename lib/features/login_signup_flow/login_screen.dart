@@ -44,12 +44,27 @@ class _LoginScreenState extends State<LoginScreen> {
         SharedPrefUtil.setValue(accessTokenPref, data['accessToken']);
         SharedPrefUtil.setValue(refreshTokenPref, data['refreshToken']);
         SharedPrefUtil.setValue(userIdPref, data['userId']);
-        await viewModel.getUserProfile(data['accessToken'],data['userId']);
+        await viewModel.getUserProfile(data['accessToken'], data['userId']);
 
-        // Navigate to dashboard
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LocationPermissionScreen()),
+        // Navigate with transition and clear stack
+        Navigator.of(context).pushAndRemoveUntil(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const LocationPermissionScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              const begin = Offset(1.0, 0.0); // Slide from right
+              const end = Offset.zero;
+              const curve = Curves.ease;
+
+              var tween =
+                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              return SlideTransition(
+                  position: animation.drive(tween), child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 400),
+          ),
+          (route) => false, // Clear entire stack
         );
       } else {
         AppTheme.showErrorDialog(context, response.message);

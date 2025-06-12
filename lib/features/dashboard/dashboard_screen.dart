@@ -68,10 +68,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             onPressed: () async {
                               // await userProvider.getUserProfile();
                             },
-                            icon: Icon(
-                              Icons.notifications,
-                              size: 28,
-                              color: colorScheme.secondary,
+                            icon: Container(
+                              padding: EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.red, // Red circular background
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.notifications_outlined,
+                                size: 20,
+                                color: Colors.white, // White icon
+                              ),
                             ),
                           ),
                           Consumer<ThemeProvider>(
@@ -81,7 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   themeProvider.themeMode == ThemeMode.dark
                                       ? Icons.light_mode
                                       : Icons.dark_mode,
-                                  size: 28,
+                                  size: 30,
                                 ),
                                 color: colorScheme.primary,
                                 onPressed: () {

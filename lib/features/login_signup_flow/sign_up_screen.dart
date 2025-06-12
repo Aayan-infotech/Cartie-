@@ -86,9 +86,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     try {
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          Navigator.of(context).pop();
+          _showErrorDialog("Location permission denied.");
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        Navigator.of(context).pop();
+        _showErrorDialog(
+          "Location permissions are permanently denied. Please enable them from app settings.",
+        );
+        return;
+      }
+
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
@@ -104,24 +124,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _zipCodeController.text = place.postalCode ?? '';
         });
       }
+
       Navigator.of(context).pop(); // Close loading dialog
     } catch (e) {
       Navigator.of(context).pop(); // Close loading dialog first
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Location Error"),
-          content: Text("Could not fetch location: ${e.toString()}"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
+      _showErrorDialog("Could not fetch location: ${e.toString()}");
     }
   }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Location Error"),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _fetchCityStateFromZip(String zipCode) async {
     if (zipCode.length >= 5) {

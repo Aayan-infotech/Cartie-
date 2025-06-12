@@ -47,8 +47,13 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
       appBar: AppBar(
         backgroundColor: colors.background,
         iconTheme: IconThemeData(color: colors.onBackground),
-        title:
-            Text("Carting Rules", style: TextStyle(color: colors.onBackground)),
+        title: Text(
+          "Carting Rules",
+          style: textTheme.headlineSmall?.copyWith(
+            color: colors.onBackground,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         elevation: 0,
       ),
       body: Consumer<DashBoardProvider>(

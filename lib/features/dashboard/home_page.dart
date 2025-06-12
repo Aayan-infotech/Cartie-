@@ -31,9 +31,7 @@ class _HomePageState extends State<HomePage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = constraints.maxWidth;
-        final screenHeight = constraints.maxHeight;
 
-        // Responsive grid configuration
         final crossAxisCount = screenWidth > 600 ? 3 : 2;
         final aspectRatio = screenWidth > 600 ? 1.1 : 0.9;
         final spacing = screenWidth * 0.14;
@@ -62,7 +60,7 @@ class _HomePageState extends State<HomePage> {
                   onTap: () {
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
-                      return TrainingDetailScreen();
+                      return const TrainingDetailScreen();
                     }));
                   },
                   child: const DashboardCard(
@@ -71,10 +69,10 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   Navigator.of(context)
                       .push(MaterialPageRoute(builder: (context) {
-                    return CartingRulesScreen();
+                    return const CartingRulesScreen();
                   }));
                 },
-                child: DashboardCard(
+                child: const DashboardCard(
                     icon: Icons.list_alt,
                     label: "Rules and regulations for LSVs"),
               ),
@@ -82,10 +80,10 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   Navigator.of(context)
                       .push(MaterialPageRoute(builder: (context) {
-                    return LSVPracticesScreen();
+                    return const LSVPracticesScreen();
                   }));
                 },
-                child: DashboardCard(
+                child: const DashboardCard(
                     icon: Icons.psychology,
                     label: "Good LSV practices for the area"),
               ),
@@ -96,7 +94,7 @@ class _HomePageState extends State<HomePage> {
                       return TrainingMapScreen();
                     }));
                   },
-                  child: DashboardCard(
+                  child: const DashboardCard(
                       icon: Icons.map, label: "Map of local area")),
               GestureDetector(
                   onTap: () {

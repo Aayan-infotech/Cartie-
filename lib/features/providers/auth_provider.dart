@@ -113,22 +113,29 @@ class UserViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> addLocation(String name, LatLng latLng) async {
+  Future<ApiResponseWithData> addLocation(String name, LatLng latLng) async {
     _setLoading(true);
     clearErrorMessage();
+
+    late final ApiResponseWithData response;
+
     try {
-      final response = await _authAPIs.saveLocation(name, latLng);
+      response = await _authAPIs.saveLocation(name, latLng);
       if (!response.success) {
         errorMessage = response.message ?? 'Update failed';
       }
     } catch (e) {
       errorMessage = e.toString();
+      rethrow; // optionally propagate the error
     } finally {
       _setLoading(false);
     }
+
+    return response;
   }
 
-  Future<void> getUserProfile(String token, String id,{bool forceRefresh = false}) async {
+  Future<void> getUserProfile(String token, String id,
+      {bool forceRefresh = false}) async {
     _setLoading(true);
     clearErrorMessage();
 
@@ -139,7 +146,7 @@ class UserViewModel extends ChangeNotifier {
 
     try {
       if (true) {
-        final response = await _authAPIs.getUserById(token,id);
+        final response = await _authAPIs.getUserById(token, id);
         if (!response.success) {
           errorMessage = response.message ?? 'Fetch failed';
         } else {

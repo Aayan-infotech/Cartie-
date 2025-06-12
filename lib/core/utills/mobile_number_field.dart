@@ -38,7 +38,6 @@ class CustomPhoneTextField extends StatelessWidget {
       // // optional
 
       decoration: InputDecoration(
-      
         labelText: labelText,
         filled: isFilled,
         fillColor: backgroundColor ?? theme.inputDecorationTheme.fillColor,

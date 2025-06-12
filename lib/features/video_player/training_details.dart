@@ -28,8 +28,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   int _selectedTabIndex = 1;
   late CourseProvider _courseProvider;
   bool _isVideoEnded = false;
-  Timer? _progressSaveTimer; // Added for progress throttling
-  DateTime _lastSaveTime = DateTime.now(); // Added for progress throttling
+  Timer? _progressSaveTimer;
+  DateTime _lastSaveTime = DateTime.now();
 
   List<String> _videoUrls = [];
   List<Section> _uiSections = [];
@@ -114,10 +114,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     return uiSections;
   }
 
-  // NEW: Helper to unlock next video in UI
   void _optimisticallyUnlockNextVideo() {
     setState(() {
-      // Unlock next lesson in same section
       for (final section in _uiSections) {
         for (int i = 0; i < section.lessons.length; i++) {
           if (section.lessons[i].videoIndex == _currentVideoIndex &&
@@ -132,9 +130,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _initializeVideo(int index) async {
     if (index >= _videoUrls.length) return;
+
+    final currentVideo = _allVideos[index];
     final currentSection = _uiSections.firstWhere(
       (s) => s.lessons.any((l) => l.videoIndex == index),
-      orElse: () => throw Exception('Section not found'),
     );
 
     final lesson = currentSection.lessons.firstWhere(
@@ -148,39 +147,46 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       );
       return;
     }
-    final currentVideo = _allVideos[index];
+
     final newController =
         VideoPlayerController.networkUrl(Uri.parse(_videoUrls[index]));
     await newController.initialize();
+    if (!currentVideo.isCompleted) {
+      final savedPosition = currentVideo.watchedDuration;
+      await newController.seekTo(Duration(seconds: savedPosition));
+    }
 
-    // COMBINED LISTENER (replaces two separate listeners)
     newController.addListener(() async {
       if (!mounted) return;
       final value = newController.value;
 
-      // 1. Handle video completion
       if (value.duration > Duration.zero &&
           value.position >= value.duration &&
           !_isVideoEnded) {
         _isVideoEnded = true;
 
-        // Only mark as completed if not already completed
         if (!currentVideo.isCompleted) {
           await _courseProvider.markVideoCompleted(
             locationId: _courseProvider.sections!.location,
             sectionId: currentVideo.sectionId,
             videoId: currentVideo.id,
           );
-          // Optimistically unlock next video in UI
+          await _courseProvider.updateVideoProgress(
+            locationId: _courseProvider.sections!.location,
+            sectionId: currentVideo.sectionId,
+            videoId: currentVideo.id,
+            watchedDuration: value.position.inSeconds.toString(),
+          );
+
           _optimisticallyUnlockNextVideo();
+
+          // Refresh UI after completing video
+          setState(() {});
         }
-      }
-      // Reset ended flag if not at end
-      else if (value.position < value.duration) {
+      } else if (value.position < value.duration) {
         _isVideoEnded = false;
       }
 
-      // 2. Throttled progress saving
       if (!value.isPlaying &&
           value.position < value.duration &&
           DateTime.now().difference(_lastSaveTime) >
@@ -197,14 +203,6 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         });
       }
     });
-
-    // Restore saved progress if not completed
-    if (!currentVideo.isCompleted) {
-      final savedPosition = currentVideo.watchedDuration;
-      if (savedPosition != null) {
-        await newController.seekTo(Duration(seconds: savedPosition));
-      }
-    }
 
     if (mounted) {
       _videoController?.dispose();
@@ -275,7 +273,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   @override
   void dispose() {
     _courseProvider.removeListener(_onProviderUpdate);
-    _progressSaveTimer?.cancel(); // Cancel timer on dispose
+    _progressSaveTimer?.cancel();
 
     if (_videoController != null && _videoController!.value.isInitialized) {
       final currentPosition = _videoController!.value.position;
@@ -423,25 +421,29 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   }
 
   Widget _buildTabButton(int index, String label, ColorScheme colorScheme) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isSelected = _selectedTabIndex == index;
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _selectedTabIndex = index),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.primary : colorScheme.secondary,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.montserrat(
-              color: isSelected ? Colors.white : colorScheme.onSecondary,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isSelected ? colorScheme.primary : colorScheme.secondary,
+              borderRadius: BorderRadius.circular(6),
             ),
-          ),
-        ),
+            child: Text(
+              label,
+              style: GoogleFonts.montserrat(
+                color: themeProvider.themeMode == ThemeMode.light
+                    ? Colors.white
+                    : isSelected
+                        ? Colors.white
+                        : colorScheme.onSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            )),
       ),
     );
   }
@@ -529,11 +531,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   BrandedPrimaryButton(
+                    // FIX: Only enable if section is completed AND test not passed
                     isEnabled:
                         section.isSectionCompleted && !section.isTestPass,
                     name: section.isTestPass ? "Passed" : "Take Assessment",
                     onPressed: () async {
                       if (!section.isSectionCompleted) return;
+                      if (_chewieController?.isPlaying == true) {
+                        _chewieController?.pause();
+                      }
 
                       final courseProvider =
                           Provider.of<CourseProvider>(context, listen: false);

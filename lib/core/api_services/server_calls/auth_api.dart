@@ -26,8 +26,8 @@ class AuthAPIs {
       String name, LatLng latLng) async {
     Map<String, String> data = {
       "name": name,
-      "latitude": latLng.latitude.toString(),
-      "longitude": latLng.longitude.toString()
+      "latitude": latLng.longitude.toString(),
+      "longitude": latLng.latitude.toString()
     };
 
     return await CallHelper()

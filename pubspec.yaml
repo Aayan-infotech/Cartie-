@@ -44,7 +44,7 @@ dependencies:
   permission_handler:
   cached_network_image: ^3.3.1
   location:
-  google_fonts:
+  google_fonts: ^4.0.4
   chewie: ^1.7.5 
   exponential_back_off: ^0.1.0+2
   shared_preferences: ^2.0.8

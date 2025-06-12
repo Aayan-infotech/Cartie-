@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static ThemeData get lightTheme => ThemeData(
@@ -11,11 +12,11 @@ class AppTheme {
           onPrimary: Colors.white,
           onSecondary: Colors.black,
         ),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
+        textTheme: GoogleFonts.poppinsTextTheme().copyWith(
+          displayLarge: const TextStyle(
               fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-          bodyLarge: TextStyle(fontSize: 16, color: Colors.black87),
-          bodyMedium: TextStyle(fontSize: 14, color: Colors.black54),
+          bodyLarge: const TextStyle(fontSize: 16, color: Colors.black87),
+          bodyMedium: const TextStyle(fontSize: 14, color: Colors.black54),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
@@ -53,11 +54,12 @@ class AppTheme {
           onPrimary: Colors.white,
           onSecondary: Colors.black,
         ),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
+        textTheme:
+            GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).copyWith(
+          displayLarge: const TextStyle(
               fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          bodyLarge: TextStyle(fontSize: 16, color: Colors.white70),
-          bodyMedium: TextStyle(fontSize: 14, color: Colors.white60),
+          bodyLarge: const TextStyle(fontSize: 16, color: Colors.white70),
+          bodyMedium: const TextStyle(fontSize: 14, color: Colors.white60),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
@@ -84,6 +86,7 @@ class AppTheme {
           labelStyle: TextStyle(color: Colors.white70),
         ),
       );
+
   static void showSuccessDialog(BuildContext context, String message,
       {VoidCallback? onConfirm}) {
     showDialog(

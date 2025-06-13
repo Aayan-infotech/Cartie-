@@ -146,18 +146,20 @@ class Course {
   final List<Section> sections;
   final String totalDuration;
   final int totalVideos;
+  final bool isCertificate;
 
-  Course({
-    required this.id,
-    required this.location,
-    required this.sections,
-    required this.totalDuration,
-    required this.totalVideos,
-  });
+  Course(
+      {required this.id,
+      required this.location,
+      required this.sections,
+      required this.totalDuration,
+      required this.totalVideos,
+      this.isCertificate = false});
 
   factory Course.fromJson(Map<String, dynamic>? json) {
     try {
       return Course(
+        isCertificate: json?['enrolled'] ?? false,
         id: json?['_id']?.toString() ?? '',
         location: json?['locationId']?.toString() ?? '',
         totalDuration: json?['totalDuration']?.toString() ?? '',

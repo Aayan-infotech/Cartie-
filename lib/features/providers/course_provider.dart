@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/api_services/server_calls/course_section_api.dart';
+import 'package:cartie/core/models/certificate_model.dart';
 import 'package:cartie/core/models/course_model.dart';
 import 'package:cartie/core/models/question_submition.dart';
 import 'package:cartie/core/models/quiz_model.dart';
+import 'package:cartie/features/view_certificate.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class CourseProvider extends ChangeNotifier {
   final CourseSectionApi _api = CourseSectionApi();
@@ -128,35 +132,6 @@ class CourseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Future<void> markVideoCompleted({
-  //   required String locationId,
-  //   required String sectionId,
-  //   required String videoId,
-  // }) async {
-  //   final course = _sections;
-  //   if (course == null) return;
-
-  //   final section = course.sections.firstWhere(
-  //     (s) => s.id == sectionId,
-  //     orElse: () => throw Exception('Section not found'),
-  //   );
-
-  //   Video video = section.videos.firstWhere(
-  //     (v) => v.id == videoId,
-  //     orElse: () => throw Exception('Video not found'),
-  //   );
-
-  //   video.isCompleted = true;
-
-  //   // Check if all videos in section are completed
-  //   final allVideosCompleted = section.videos.every((v) => v.isCompleted);
-  //   if (allVideosCompleted) {
-  //     section.isSectionCompleted = true;
-  //   }
-
-  //   notifyListeners();
-  // }
-
   Future<void> fetchCourseSections() async {
     _isLoading = true;
     notifyListeners();
@@ -173,6 +148,31 @@ class CourseProvider extends ChangeNotifier {
             totalDuration: '12',
             totalVideos: 0);
       }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  late Certificate _certificate;
+  Future<void> getCertificate(String locationId,BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      var response = await _api.getCertificate(locationId);
+      if (response.success) {
+        _certificate = Certificate.fromJson(response.data['data']);
+        Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => CertificateDetailScreen(
+      certificate: _certificate,
+    ),
+  ),
+);
+        print(_certificate);
+      } else {}
     } finally {
       _isLoading = false;
       notifyListeners();

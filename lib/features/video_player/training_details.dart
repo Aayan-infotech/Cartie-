@@ -307,6 +307,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           'Training',
           style: theme.textTheme.displayLarge,
         ),
+        actions: [],
       ),
       body: Consumer<CourseProvider>(
         builder: (context, provider, _) {
@@ -462,106 +463,123 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Widget _buildCurriculumTab(ColorScheme colorScheme) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: _uiSections
-          .map((section) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(section.title,
-                      style: GoogleFonts.montserrat(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface)),
-                  const SizedBox(height: 6),
-                  Text('Duration: ${section.duration}',
-                      style: TextStyle(
-                          color: colorScheme.onSurfaceVariant, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  ...section.lessons.map(
-                    (lesson) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      onTap: lesson.isUnlocked
-                          ? () => _changeVideo(lesson.videoIndex)
-                          : null,
-                      leading: Icon(
-                        lesson.isUnlocked
-                            ? (_currentVideoIndex == lesson.videoIndex
-                                ? Icons.pause
-                                : Icons.play_circle_fill)
-                            : Icons.lock_outline,
-                        color: lesson.isUnlocked
-                            ? (_currentVideoIndex == lesson.videoIndex
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant)
-                            : Colors.grey,
-                        size: 28,
-                      ),
-                      title: Text(
-                        '${lesson.index}. ${lesson.title}',
-                        style: GoogleFonts.montserrat(
-                          color: lesson.isUnlocked
-                              ? (_currentVideoIndex == lesson.videoIndex
-                                  ? colorScheme.primary
-                                  : colorScheme.onSurface)
-                              : Colors.grey,
-                          fontWeight: _currentVideoIndex == lesson.videoIndex
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      subtitle: Text(lesson.time,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: _uiSections
+              .map((section) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(section.title,
                           style: GoogleFonts.montserrat(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface)),
+                      const SizedBox(height: 6),
+                      Text('Duration: ${section.duration}',
+                          style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 13)),
+                      const SizedBox(height: 8),
+                      ...section.lessons.map(
+                        (lesson) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          onTap: lesson.isUnlocked
+                              ? () => _changeVideo(lesson.videoIndex)
+                              : null,
+                          leading: Icon(
+                            lesson.isUnlocked
+                                ? (_currentVideoIndex == lesson.videoIndex
+                                    ? Icons.pause
+                                    : Icons.play_circle_fill)
+                                : Icons.lock_outline,
                             color: lesson.isUnlocked
                                 ? (_currentVideoIndex == lesson.videoIndex
                                     ? colorScheme.primary
                                     : colorScheme.onSurfaceVariant)
                                 : Colors.grey,
-                          )),
-                      trailing: lesson.isLessionCompleted
-                          ? Icon(Icons.check_circle,
-                              color: colorScheme.primary, size: 20)
-                          : (lesson.isUnlocked
-                              ? null
-                              : Icon(Icons.lock, size: 20)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  BrandedPrimaryButton(
-                    // FIX: Only enable if section is completed AND test not passed
-                    isEnabled:
-                        section.isSectionCompleted && !section.isTestPass,
-                    name: section.isTestPass ? "Passed" : "Take Assessment",
-                    onPressed: () async {
-                      if (!section.isSectionCompleted) return;
-                      if (_chewieController?.isPlaying == true) {
-                        _chewieController?.pause();
-                      }
-
-                      final courseProvider =
-                          Provider.of<CourseProvider>(context, listen: false);
-                      await courseProvider.fetchQuiz(
-                        locationId: _courseProvider.sections.location,
-                        sectionId: section.id,
-                        sectionNumber: section.sectionNumber,
-                      );
-
-                      if (mounted) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AssessmentScreen(
-                              locationId: _courseProvider.sections.location,
-                              sectionId: section.id,
-                              sectionNumber: section.sectionNumber,
+                            size: 28,
+                          ),
+                          title: Text(
+                            '${lesson.index}. ${lesson.title}',
+                            style: GoogleFonts.montserrat(
+                              color: lesson.isUnlocked
+                                  ? (_currentVideoIndex == lesson.videoIndex
+                                      ? colorScheme.primary
+                                      : colorScheme.onSurface)
+                                  : Colors.grey,
+                              fontWeight:
+                                  _currentVideoIndex == lesson.videoIndex
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
                             ),
                           ),
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ))
-          .toList(),
+                          subtitle: Text(lesson.time,
+                              style: GoogleFonts.montserrat(
+                                color: lesson.isUnlocked
+                                    ? (_currentVideoIndex == lesson.videoIndex
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurfaceVariant)
+                                    : Colors.grey,
+                              )),
+                          trailing: lesson.isLessionCompleted
+                              ? Icon(Icons.check_circle,
+                                  color: colorScheme.primary, size: 20)
+                              : (lesson.isUnlocked
+                                  ? null
+                                  : Icon(Icons.lock, size: 20)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      BrandedPrimaryButton(
+                        // FIX: Only enable if section is completed AND test not passed
+                        isEnabled:
+                            section.isSectionCompleted && !section.isTestPass,
+                        name: section.isTestPass ? "Passed" : "Take Assessment",
+                        onPressed: () async {
+                          if (!section.isSectionCompleted) return;
+                          if (_chewieController?.isPlaying == true) {
+                            _chewieController?.pause();
+                          }
+
+                          final courseProvider = Provider.of<CourseProvider>(
+                              context,
+                              listen: false);
+                          await courseProvider.fetchQuiz(
+                            locationId: _courseProvider.sections.location,
+                            sectionId: section.id,
+                            sectionNumber: section.sectionNumber,
+                          );
+
+                          if (mounted) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => AssessmentScreen(
+                                  locationId: _courseProvider.sections.location,
+                                  sectionId: section.id,
+                                  sectionNumber: section.sectionNumber,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
+                    ],
+                  ))
+              .toList(),
+        ),
+        if (_courseProvider.sections?.isCertificate == true)
+          BrandedPrimaryButton(
+            isEnabled: true,
+            name: "Get Certificate",
+            onPressed: () {
+              _courseProvider.getCertificate(
+                  _courseProvider.sections!.location, context);
+            },
+          ),
+      ],
     );
   }
 

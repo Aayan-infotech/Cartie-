@@ -192,21 +192,54 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
           ? Center(child: CircularProgressIndicator(color: accentColor))
           : hasError
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Failed to load data',
-                          style: TextStyle(color: Colors.white)),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _initializeData,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: colors.error,
                         ),
-                        child: const Text('Retry',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ],
+                        const SizedBox(height: 24),
+                        Text(
+                          'No training for this Area',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: colors.onBackground,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        // Text(
+                        //   errorMessage ?? 'Unknown error occurred',
+                        //   style: theme.textTheme.bodyMedium?.copyWith(
+                        //     color: colors.onBackground.withOpacity(0.7),
+                        //   ),
+                        //   textAlign: TextAlign.center,
+                        // ),
+                        const SizedBox(height: 32),
+                        ElevatedButton(
+                          onPressed: _initializeData,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colors.primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Try Again',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: colors.onPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : Stack(

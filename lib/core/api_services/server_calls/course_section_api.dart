@@ -10,6 +10,17 @@ class CourseSectionApi extends ApiBase {
     );
   }
 
+  Future<ApiResponseWithData<Map<String, dynamic>>> getCertificate(
+      String locationId) async {
+    Map<String, dynamic> data = {
+      "locationId": locationId,
+    };
+    return await CallHelper().postWithData<Map<String, dynamic>>(
+      'api/user/asses/enrollForCertificate', data,
+      {}, // Default data in case of failure
+    );
+  }
+
   Future<ApiResponseWithData<Map<String, dynamic>>> getAssisment(
       String locationId, String sectionId, int sectionNumber) async {
     Map<String, dynamic> data = {

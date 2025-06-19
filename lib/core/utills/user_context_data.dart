@@ -23,15 +23,9 @@ class UserContextData {
       await Future.wait(lstFutures);
     } catch (e) {
       debugPrint('User data fetch failed: $e');
-
-      // Optional: Handle logout if needed
       if (e.toString().contains('Token expired') ||
           e.toString().contains('Unauthorized')) {
-        // Navigator.pushAndRemoveUntil(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => const LoginScreen()),
-        //   (route) => false,
-        // );
+     
       }
     }
   }

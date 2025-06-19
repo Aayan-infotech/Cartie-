@@ -31,19 +31,25 @@ class Certificate {
 
   factory Certificate.fromJson(Map<String, dynamic> json) {
     return Certificate(
-      id: json['_id'],
-      userId: json['userId'],
-      locationId: json['locationId'],
-      certificateNumber: json['certificateNumber'],
-      email: json['email'],
-      certificateName: json['certificateName'],
-      certificateIssuedBy: json['certificateIssuedBy'],
+      id: json['_id'] ?? '',
+      userId: json['userId'] ?? '',
+      locationId: json['locationId'] ?? "",
+      certificateNumber: json['certificateNumber'] ?? '',
+      email: json['email'] ?? "",
+      certificateName: json['certificateName'] ?? "",
+      certificateIssuedBy: json['certificateIssuedBy'] ?? "",
       issueDate: DateTime.parse(json['issueDate']),
       certificateUrl: json['certificateUrl'],
       validUntil: DateTime.parse(json['validUntil']),
-      issuedAt: DateTime.parse(json['issuedAt']),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      issuedAt: json['issuedAt'] != null
+          ? DateTime.parse(json['issuedAt'])
+          : DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
     );
   }
 

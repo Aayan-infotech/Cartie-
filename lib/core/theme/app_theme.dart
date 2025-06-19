@@ -6,7 +6,7 @@ class AppTheme {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
         colorScheme: const ColorScheme.light(
-          primary: Colors.redAccent,
+          primary: Color.fromRGBO(255, 21, 21, 1),
           secondary: Colors.black87,
           background: Colors.white,
           onPrimary: Colors.white,
@@ -26,7 +26,7 @@ class AppTheme {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Color.fromRGBO(255, 21, 21, 1),
             padding: const EdgeInsets.symmetric(vertical: 12),
             textStyle:
                 const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -36,7 +36,7 @@ class AppTheme {
           filled: true,
           fillColor: Colors.black12,
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.redAccent),
+            borderSide: BorderSide(color: Color.fromRGBO(255, 21, 21, 1)),
             borderRadius: BorderRadius.all(Radius.circular(8)),
           ),
           hintStyle: TextStyle(color: Colors.black45),
@@ -48,7 +48,7 @@ class AppTheme {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.black,
         colorScheme: const ColorScheme.dark(
-          primary: Colors.redAccent,
+          primary: Color.fromRGBO(255, 21, 21, 1),
           secondary: Colors.white70,
           background: Colors.black,
           onPrimary: Colors.white,
@@ -69,7 +69,7 @@ class AppTheme {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Color.fromRGBO(255, 21, 21, 1),
             padding: const EdgeInsets.symmetric(vertical: 12),
             textStyle:
                 const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -79,7 +79,7 @@ class AppTheme {
           filled: true,
           fillColor: Colors.white10,
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.redAccent),
+            borderSide: BorderSide(color: Color.fromRGBO(255, 21, 21, 1)),
             borderRadius: BorderRadius.all(Radius.circular(8)),
           ),
           hintStyle: TextStyle(color: Colors.white54),

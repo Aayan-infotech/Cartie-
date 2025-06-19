@@ -98,10 +98,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text(
+                            child: Text(
                               "Active +9",
                               style: TextStyle(
-                                color: Colors.red,
+                                color: colors.primary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -137,6 +137,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 Widget buildProfileCard(BuildContext context, UserViewModel userProvider) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
   return GestureDetector(
     onTap: () {
       Navigator.of(context).push(
@@ -148,7 +150,7 @@ Widget buildProfileCard(BuildContext context, UserViewModel userProvider) {
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red,
+        color: colorScheme.primary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -219,12 +221,14 @@ class SettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         decoration: BoxDecoration(
-          color: Colors.red,
+          color: colorScheme.primary,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -315,7 +319,7 @@ class LogoutConfirmationSheet extends StatelessWidget {
                   icon: const Icon(Icons.logout, size: 20),
                   label: const Text("LOGOUT"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onError,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

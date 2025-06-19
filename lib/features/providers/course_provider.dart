@@ -154,8 +154,28 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
+  List<Certificate> lstCertificate = [];
+  Future<void> getAllCertificate() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      var response = await _api.getAllCertificate();
+      if (response.success) {
+        lstCertificate = (response.data["data"] as List)
+            .map((item) => Certificate.fromJson(item))
+            .toList();
+      } else {
+        lstCertificate = [];
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   late Certificate _certificate;
-  Future<void> getCertificate(String locationId,BuildContext context) async {
+  Future<void> getCertificate(String locationId, BuildContext context) async {
     _isLoading = true;
     notifyListeners();
 
@@ -164,13 +184,13 @@ class CourseProvider extends ChangeNotifier {
       if (response.success) {
         _certificate = Certificate.fromJson(response.data['data']);
         Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => CertificateDetailScreen(
-      certificate: _certificate,
-    ),
-  ),
-);
+          context,
+          MaterialPageRoute(
+            builder: (context) => CertificateDetailScreen(
+              certificate: _certificate,
+            ),
+          ),
+        );
         print(_certificate);
       } else {}
     } finally {

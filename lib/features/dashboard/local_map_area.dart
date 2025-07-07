@@ -70,10 +70,53 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
   //   }
   // }
 
+  // Future<void> _fetchGeofenceData() async {
+  //   try {
+  //     final token = SharedPrefUtil.getValue(constant.accessTokenPref, "")
+  //         as String; // Or however you retrieve your token
+
+  //     final response = await http.get(
+  //       Uri.parse('${CallHelper.baseUrl}api/user/location/getGeofence'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final jsonData = json.decode(response.body);
+  //       final geometry = jsonData['data']['geometry'];
+
+  //       if (geometry['type'] == 'Polygon') {
+  //         final coordinates = geometry['coordinates'][0];
+  //         final polygonPoints = coordinates
+  //             .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+  //             .toList();
+
+  //         setState(() {
+  //           polygons.add(Polygon(
+  //             polygonId: const PolygonId('geofence'),
+  //             points: polygonPoints,
+  //             strokeWidth: 4,
+  //             strokeColor: Colors.green,
+  //             fillColor: Colors.green.withOpacity(0.15),
+  //           ));
+  //         });
+  //       }
+  //     } else {
+  //       throw Exception('Failed to load geofence data: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print("Error fetching geofence: $e");
+  //     rethrow;
+  //   } finally {
+  //     setState(() => isLoading = false);
+  //   }
+  // }
   Future<void> _fetchGeofenceData() async {
     try {
-      final token = SharedPrefUtil.getValue(constant.accessTokenPref, "")
-          as String; // Or however you retrieve your token
+      final token =
+          SharedPrefUtil.getValue(constant.accessTokenPref, "") as String;
 
       final response = await http.get(
         Uri.parse('${CallHelper.baseUrl}api/user/location/getGeofence'),
@@ -86,22 +129,14 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         final geometry = jsonData['data']['geometry'];
+        final coordinates = geometry['coordinates'];
 
         if (geometry['type'] == 'Polygon') {
-          final coordinates = geometry['coordinates'][0];
-          final polygonPoints = coordinates
-              .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
-              .toList();
-
-          setState(() {
-            polygons.add(Polygon(
-              polygonId: const PolygonId('geofence'),
-              points: polygonPoints,
-              strokeWidth: 4,
-              strokeColor: Colors.green,
-              fillColor: Colors.green.withOpacity(0.15),
-            ));
-          });
+          _addPolygon(coordinates[0]); // Handle Polygon coordinates
+        } else if (geometry['type'] == 'MultiPolygon') {
+          for (var polygon in coordinates) {
+            _addPolygon(polygon[0]); // Handle each polygon in MultiPolygon
+          }
         }
       } else {
         throw Exception('Failed to load geofence data: ${response.statusCode}');
@@ -112,6 +147,22 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
     } finally {
       setState(() => isLoading = false);
     }
+  }
+
+  void _addPolygon(List<dynamic> coordinates) {
+    final polygonPoints = coordinates
+        .map<LatLng>((coord) => LatLng(coord[1] as double, coord[0] as double))
+        .toList();
+
+    setState(() {
+      polygons.add(Polygon(
+        polygonId: PolygonId('geofence_${polygons.length}'),
+        points: polygonPoints,
+        strokeWidth: 4,
+        strokeColor: Colors.green,
+        fillColor: Colors.green.withOpacity(0.15),
+      ));
+    });
   }
 
   void _adjustCamera() {

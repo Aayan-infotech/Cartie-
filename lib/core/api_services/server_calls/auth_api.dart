@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:cartie/core/api_services/api_base.dart';
 import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/utills/constant.dart';
+import 'package:dio/dio.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -32,6 +35,50 @@ class AuthAPIs {
 
     return await CallHelper()
         .postWithData('api/user/location/addLocation', data, {});
+  }
+
+  static Future<bool> uploadProfileImage(File imageFile) async {
+    try {
+      final String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+      final String accessToken =
+          SharedPrefUtil.getValue(accessTokenPref, "") as String;
+
+      final String url = '${CallHelper.baseUrl}api/users/profileImage/$userId';
+
+      Dio dio = Dio();
+
+      FormData formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+        ),
+      });
+
+      final response = await dio.patch(
+        url,
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+            // ⚠️ REMOVE this line:
+            // 'Content-Type': 'multipart/form-data',
+            // Let Dio set it with boundary
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        print("Upload success: ${response.data}");
+        return true;
+      } else {
+        print("Upload failed: ${response.statusCode} - ${response.data}");
+        return false;
+      }
+    } catch (e, stackTrace) {
+      print("Upload error: $e");
+      print(stackTrace);
+      return false;
+    }
   }
 
   Future<ApiResponseWithData> updateProfile(

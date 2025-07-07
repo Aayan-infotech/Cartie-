@@ -139,7 +139,14 @@ class CourseProvider extends ChangeNotifier {
     try {
       var response = await _api.getCourseSection();
       if (response.success) {
-        _sections = Course.fromJson(response.data['data'][0]);
+        _sections = (response.data['data'] as List).isNotEmpty
+            ? Course.fromJson(response.data['data'][0])
+            : Course(
+                id: '',
+                location: '',
+                sections: [],
+                totalDuration: '12',
+                totalVideos: 0);
       } else {
         _sections = Course(
             id: '',

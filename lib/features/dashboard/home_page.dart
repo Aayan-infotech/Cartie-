@@ -3,11 +3,9 @@ import 'package:cartie/features/dashboard/LSV_practics_screen.dart';
 import 'package:cartie/features/dashboard/cart_rules_screen.dart';
 import 'package:cartie/features/dashboard/certificate_screen.dart';
 import 'package:cartie/features/dashboard/local_map_area.dart';
-import 'package:cartie/features/providers/auth_provider.dart';
 import 'package:cartie/features/video_player/training_details.dart';
 import 'package:cartie/features/video_player/traning_video.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

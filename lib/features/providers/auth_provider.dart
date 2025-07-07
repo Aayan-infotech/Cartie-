@@ -15,6 +15,7 @@ class UserViewModel extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
   UserModel user = UserModel(
+  image: '',
       name: "Jhon",
       email: 'Jhon@gmail.com',
       mobile: "123456789",

@@ -3,7 +3,8 @@ class UserModel {
   final String email;
   final String mobile;
    String address;
-  final String? image;
+  final String image;
+  
   final DateTime createdAt;
   final DateTime updatedAt;
   final String refreshToken;
@@ -13,7 +14,7 @@ class UserModel {
     required this.email,
     required this.mobile,
     required this.address,
-    this.image,
+   required this.image,
     required this.createdAt,
     required this.updatedAt,
     required this.refreshToken,

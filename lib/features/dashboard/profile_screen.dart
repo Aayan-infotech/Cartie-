@@ -1,15 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cartie/core/theme/theme_provider.dart';
 import 'package:cartie/core/utills/shared_pref_util.dart';
-import 'package:cartie/features/dashboard/certificate_info_screen.dart';
 import 'package:cartie/features/dashboard/certificate_screen.dart';
 import 'package:cartie/features/dashboard/edit_profile_screen.dart';
 import 'package:cartie/features/login_signup_flow/login_screen.dart';
-import 'package:cartie/features/login_signup_flow/password_screen.dart';
 import 'package:cartie/features/login_signup_flow/select_location_screen.dart';
 import 'package:cartie/features/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Add this import
+import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -91,22 +88,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                           icon: Icons.settings,
                           title: "Certifications",
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              "Active +9",
-                              style: TextStyle(
-                                color: colors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
+                          // trailing: Container(
+                          //   padding: const EdgeInsets.symmetric(
+                          //       horizontal: 8, vertical: 4),
+                          //   decoration: BoxDecoration(
+                          //     color: Colors.white,
+                          //     borderRadius: BorderRadius.circular(20),
+                          //   ),
+                          //   child: Text(
+                          //     "Active +9",
+                          //     style: TextStyle(
+                          //       color: colors.primary,
+                          //       fontWeight: FontWeight.bold,
+                          //       fontSize: 12,
+                          //     ),
+                          //   ),
+                          // ),
                         ),
                         const SizedBox(height: 10),
                         SettingTile(
@@ -114,7 +111,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: "Select Location",
                           onTap: () {
                             Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => LocationSearchScreen(),
+                              builder: (context) =>
+                                  const LocationSearchScreen(),
                             ));
                           },
                         ),

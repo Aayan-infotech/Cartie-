@@ -1,12 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cartie/core/models/lsv_model.dart';
-import 'package:cartie/core/utills/branded_text_filed.dart';
-import 'package:cartie/features/carting_lesson.dart';
-import 'package:cartie/features/dashboard/info_screen.dart';
-import 'package:cartie/features/helmet_screen.dart';
-import 'package:cartie/features/sefty_article.dart';
-import 'package:flutter/material.dart';
-
 import 'package:cartie/core/models/carting_rules_model.dart';
 import 'package:cartie/core/utills/branded_text_filed.dart';
 import 'package:cartie/features/carting_lesson.dart';
@@ -16,6 +9,7 @@ import 'package:cartie/features/providers/dash_board_provider.dart';
 import 'package:cartie/features/sefty_article.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 class CartingRulesScreen extends StatefulWidget {
   const CartingRulesScreen({super.key});
@@ -49,7 +43,7 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
         iconTheme: IconThemeData(color: colors.onBackground),
         title: Text(
           "Carting Rules",
-            style: theme.textTheme.displayLarge,
+          style: theme.textTheme.displayLarge,
         ),
         elevation: 0,
       ),
@@ -91,7 +85,6 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
                       .map((guideline) =>
                           _buildGuidelineButton(context, guideline))
                       .toList(),
-                  // _buildImportantSection(context),
                 ],
               ),
             ),
@@ -106,9 +99,7 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return GestureDetector(
-      onTap: () {
-        // Navigate to detail screen or handle tap
-      },
+      onTap: () {},
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
@@ -118,7 +109,6 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
             if (guideline.imageUrl.isNotEmpty)
               ClipRRect(
                 borderRadius:
@@ -140,8 +130,6 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
                   ),
                 ),
               ),
-
-            // Text content
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -156,12 +144,16 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
                   ),
                   const SizedBox(height: 6),
                   if (guideline.description.isNotEmpty)
-                    Text(
-                      guideline.description,
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontSize: 12,
-                        color: colors.onBackground.withOpacity(0.7),
-                      ),
+                    Html(
+                      data: guideline.description,
+                      style: {
+                        "body": Style(
+                          fontSize: FontSize(12),
+                          color: colors.onBackground.withOpacity(0.7),
+                          margin: Margins.zero,
+                          // padding: EdgeInsets.zero,
+                        ),
+                      },
                     ),
                 ],
               ),
@@ -169,34 +161,6 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Expanded(
-          child: BrandedTextField(
-            controller: _searchController,
-            labelText: "Search",
-            isFilled: false,
-            prefix: Icon(Icons.search, color: colors.primary),
-            keyboardType: TextInputType.text,
-            backgroundColor: Colors.transparent,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(
-            color: colors.primary,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(Icons.mic, color: colors.onPrimary),
-        ),
-      ],
     );
   }
 
@@ -269,7 +233,17 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
         color: colors.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(content, style: TextStyle(color: colors.onBackground)),
+      child: Html(
+        data: content,
+        style: {
+          "body": Style(
+            fontSize: FontSize(14),
+            color: colors.onBackground,
+            margin: Margins.zero,
+            // padding: EdgeInsets.zero,
+          ),
+        },
+      ),
     );
   }
 
@@ -301,8 +275,17 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(section.description,
-                    style: TextStyle(color: colors.onBackground)),
+                Html(
+                  data: section.description,
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(13),
+                      color: colors.onBackground,
+                      margin: Margins.zero,
+                      //   padding: EdgeInsets.zero,
+                    ),
+                  },
+                ),
                 const SizedBox(height: 4),
                 Text("Status: ${section.isActive ? 'Active' : 'Inactive'}",
                     style: TextStyle(color: colors.primary)),
@@ -320,58 +303,6 @@ class _CartingRulesScreenState extends State<CartingRulesScreen> {
                 color: section.isActive ? Colors.green : Colors.red),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildImportantSection(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Important",
-            style: textTheme.bodyLarge?.copyWith(
-              color: colors.onBackground,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            )),
-        const SizedBox(height: 16),
-        _buildImportantItem(Icons.sports_motorsports, "Try a helmet", context,
-            const HelmetScreen()),
-        const SizedBox(height: 12),
-        _buildImportantItem(Icons.sports_soccer, "Read a safety article",
-            context, const SafetyArticle()),
-        const SizedBox(height: 12),
-        _buildImportantItem(Icons.calendar_month, "Take a carting lesson",
-            context, const CartingLesson()),
-      ],
-    );
-  }
-
-  Widget _buildImportantItem(
-      IconData icon, String title, BuildContext context, Widget destination) {
-    final colors = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context)
-            .push(MaterialPageRoute(builder: (context) => destination));
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.greenAccent, width: 2),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.greenAccent),
-            const SizedBox(width: 10),
-            Text(title,
-                style: const TextStyle(
-                    color: Colors.greenAccent, fontWeight: FontWeight.w600)),
-          ],
-        ),
       ),
     );
   }

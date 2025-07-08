@@ -53,6 +53,7 @@ dependencies:
   intl:
   dio:
   mime:
+  flutter_html:
 
 
 

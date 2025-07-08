@@ -1,17 +1,20 @@
 import 'dart:io';
-import 'package:cartie/core/api_services/server_calls/auth_api.dart';
+
+import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/theme/app_theme.dart';
+import 'package:cartie/core/utills/app_colors.dart';
+import 'package:cartie/core/utills/branded_primary_button.dart';
+import 'package:cartie/core/utills/branded_text_filed.dart';
 import 'package:cartie/core/utills/constant.dart';
 import 'package:cartie/core/utills/mobile_number_field.dart';
 import 'package:cartie/core/utills/shared_pref_util.dart';
 import 'package:cartie/features/providers/auth_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cartie/core/utills/app_colors.dart';
-import 'package:cartie/core/utills/branded_primary_button.dart';
-import 'package:cartie/core/utills/branded_text_filed.dart';
+import 'package:mime/mime.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -53,36 +56,68 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _changeProfilePicture() async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+  Future<void> _uploadProfilePicture(
+      BuildContext context, File imageFile) async {
+    try {
+      final String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+      final String accessToken =
+          SharedPrefUtil.getValue(accessTokenPref, "") as String;
+      final String url = '${CallHelper.baseUrl}api/users/profileImage/$userId';
 
-    if (pickedImage != null) {
-      setState(() {
-        _profileImage = File(pickedImage.path);
+      print("url: $url");
+
+      Dio dio = Dio();
+      dio.options.headers['Authorization'] = 'Bearer $accessToken';
+
+      final fileName = imageFile.path.split('/').last;
+      final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+      final mediaType = MediaType.parse(mimeType);
+
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+          contentType: mediaType,
+        ),
       });
 
-      // AppTheme.sh(context);
+      print("Uploading image: $fileName");
 
-      final success = await AuthAPIs.uploadProfileImage(File(pickedImage.path));
+      final response = await dio.put(
+        url,
+        data: formData, // ✅ must be whole FormData
+      );
 
-      Navigator.of(context).pop(); // Close loader
+      print("Response data: ${response.data}");
+      print("Status code: ${response.statusCode}");
 
-      if (success) {
+      if (response.statusCode == 200) {
+        final userProvider = Provider.of<UserViewModel>(context, listen: false);
+        await userProvider.getUserProfile(accessToken, userId);
         AppTheme.showSuccessDialog(
-            context, "Profile image updated successfully!");
-        final userViewModel =
-            Provider.of<UserViewModel>(context, listen: false);
-
-        // Refresh user profile
-        String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
-        String accessToken =
-            SharedPrefUtil.getValue(accessTokenPref, "") as String;
-
-        await userViewModel.getUserProfile(accessToken, userId);
+            context, "Profile image updated successfully!",
+            onConfirm: () async {});
       } else {
-        // AppTheme.showErrorDialog(context, "Failed to update profile image.");
+        AppTheme.showErrorDialog(context, "Failed to upload image",
+            onConfirm: () {});
       }
+    } catch (e) {
+      AppTheme.showErrorDialog(context, "Error: ${e.toString()}",
+          onConfirm: () {});
+    }
+  }
+
+  void _changeProfilePicture() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+
+      // Upload to server
+      await _uploadProfilePicture(context, _profileImage!);
     }
   }
 
@@ -149,7 +184,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               backgroundColor: Colors.grey.withOpacity(0.2),
                               backgroundImage: _profileImage != null
                                   ? FileImage(_profileImage!)
-                                  // ignore: unnecessary_null_comparison
                                   : (userProvider.user.image != null
                                       ? NetworkImage(userProvider.user.image)
                                           as ImageProvider

@@ -1,15 +1,12 @@
 import 'dart:io';
 
-import 'package:cartie/core/api_services/api_base.dart';
 import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/utills/constant.dart';
 import 'package:dio/dio.dart';
-
-import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import '../../utills/shared_pref_util.dart';
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 
 class AuthAPIs {
@@ -43,35 +40,32 @@ class AuthAPIs {
       final String accessToken =
           SharedPrefUtil.getValue(accessTokenPref, "") as String;
 
-      final String url = '${CallHelper.baseUrl}api/users/profileImage/$userId';
+      final Uri uri =
+          Uri.parse('${CallHelper.baseUrl}api/users/profileImage/$userId');
 
-      Dio dio = Dio();
+      // Create multipart request
+      var request = http.MultipartRequest('PUT', uri);
 
-      FormData formData = FormData.fromMap({
-        'image': await MultipartFile.fromFile(
-          imageFile.path,
-          filename: imageFile.path.split('/').last,
-        ),
-      });
+      // Add authorization header
+      request.headers['Authorization'] = 'Bearer $accessToken';
 
-      final response = await dio.patch(
-        url,
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-            // ⚠️ REMOVE this line:
-            // 'Content-Type': 'multipart/form-data',
-            // Let Dio set it with boundary
-          },
-        ),
-      );
+      // Add image file - content type will be automatically determined
+      request.files.add(await http.MultipartFile.fromPath(
+        'image',
+        imageFile.path,
+        filename: imageFile.path.split('/').last,
+      ));
+
+      // Send request
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        print("Upload success: ${response.data}");
+       
+        print("Upload success: $responseBody");
         return true;
       } else {
-        print("Upload failed: ${response.statusCode} - ${response.data}");
+        print("Upload failed: ${response.statusCode} - $responseBody");
         return false;
       }
     } catch (e, stackTrace) {

@@ -51,13 +51,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Consumer<UserViewModel>(
             builder: (context, userProvider, child) {
               return userProvider.isLoading
-                  ? Center(child: CircularProgressIndicator())
+                  ? const Center(child: CircularProgressIndicator())
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         GestureDetector(
                           onTap: () {
-                            // userProvider.getUserProfile();
                           },
                           child: Text(
                             "Profile",

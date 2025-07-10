@@ -1,4 +1,5 @@
 import 'package:cartie/core/theme/theme_provider.dart';
+import 'package:cartie/core/utills/notification_services.dart';
 import 'package:cartie/features/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:cartie/features/dashboard/certificate_screen.dart';
@@ -48,11 +49,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         title: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Hey There!",
-                              style: textTheme.headlineSmall?.copyWith(
-                                color: colorScheme.onBackground,
-                                fontWeight: FontWeight.bold,
+                            GestureDetector(
+                              onTap: () {
+                                NotificationService.triggerTestNotification(
+                                    body: 'new', title: "vikas");
+                              },
+                              child: Text(
+                                "Hey There!",
+                                style: textTheme.headlineSmall?.copyWith(
+                                  color: colorScheme.onBackground,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             Text(

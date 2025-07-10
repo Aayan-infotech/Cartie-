@@ -1,12 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cartie/core/models/lsv_model.dart';
 import 'package:cartie/core/models/carting_rules_model.dart';
-import 'package:cartie/core/utills/branded_text_filed.dart';
-import 'package:cartie/features/carting_lesson.dart';
-import 'package:cartie/features/dashboard/info_screen.dart';
-import 'package:cartie/features/helmet_screen.dart';
 import 'package:cartie/features/providers/dash_board_provider.dart';
-import 'package:cartie/features/sefty_article.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_html/flutter_html.dart';

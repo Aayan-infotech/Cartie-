@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/utills/constant.dart' as constant;
 import 'package:cartie/core/utills/notification_services.dart';
@@ -11,28 +10,20 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-import 'package:vibration/vibration.dart';
-import 'package:flutter/services.dart';
 
 class TrainingMapScreen extends StatefulWidget {
   @override
   _TrainingMapScreenState createState() => _TrainingMapScreenState();
 }
 
-class _TrainingMapScreenState extends State<TrainingMapScreen>
-    with WidgetsBindingObserver {
-  GoogleMapController? mapController;
+class _TrainingMapScreenState extends State<TrainingMapScreen> {
+  late GoogleMapController mapController;
   LatLng? currentLocation;
   Set<Polygon> polygons = {};
   bool isLoading = true;
   bool hasError = false;
   bool isInsideGeofence = true;
-  bool isAppInForeground = true;
-  bool isWarningActive = false;
   StreamSubscription<Position>? positionStream;
-  Timer? _periodicCheckTimer;
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  Completer<AlertDialog>? _activeDialogCompleter;
 
   final Color primaryColor = Colors.red[900]!;
   final Color accentColor = Colors.redAccent;
@@ -41,45 +32,13 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _initializeData();
-    _startPeriodicChecks();
-    _setupAudio();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    setState(() {
-      isAppInForeground = state == AppLifecycleState.resumed;
-    });
-
-    if (state == AppLifecycleState.resumed && !isInsideGeofence) {
-      _showIntenseWarning();
-    }
-  }
-
-  void _setupAudio() async {
-    await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-    await _audioPlayer.setSourceAsset('sounds/alarm.mp3');
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     positionStream?.cancel();
-    _periodicCheckTimer?.cancel();
-    _audioPlayer.dispose();
-    _dismissActiveDialog();
     super.dispose();
-  }
-
-  void _dismissActiveDialog() {
-    if (_activeDialogCompleter != null &&
-        !_activeDialogCompleter!.isCompleted) {
-      Navigator.of(context, rootNavigator: true).pop();
-      _activeDialogCompleter = null;
-    }
   }
 
   Future<void> _initializeData() async {
@@ -99,46 +58,21 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
     }
   }
 
-  void _startPeriodicChecks() {
-    _periodicCheckTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      if (currentLocation != null) {
-        _checkGeofenceStatus(currentLocation!);
-      } else {
-        _getCurrentLocation().then((_) {
-          if (currentLocation != null) {
-            _checkGeofenceStatus(currentLocation!);
-          }
-        });
-      }
-    });
-  }
-
   Future<void> _requestLocationPermission() async {
     final status = await Permission.location.request();
     if (!status.isGranted) {
       throw Exception('Location permission denied');
-    }
-
-    // Request background permission
-    if (await Permission.locationAlways.request().isGranted) {
-      print("Background location permission granted");
     }
   }
 
   Future<void> _getCurrentLocation() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
+        desiredAccuracy: LocationAccuracy.high,
       );
-      final newLocation = LatLng(position.latitude, position.longitude);
-
-      setState(() => currentLocation = newLocation);
-
-      if (mapController != null) {
-        mapController!.animateCamera(
-          CameraUpdate.newLatLng(newLocation),
-        );
-      }
+      setState(() {
+        currentLocation = LatLng(position.latitude, position.longitude);
+      });
     } catch (e) {
       print("Error getting location: $e");
       rethrow;
@@ -198,7 +132,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   void _startLocationMonitoring() {
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
+      distanceFilter: 10, // Update every 10 meters
     );
 
     positionStream = Geolocator.getPositionStream(
@@ -211,124 +145,22 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   }
 
   void _checkGeofenceStatus(LatLng location) {
-    bool isCurrentlyInside = _isInsideAnyPolygon(location);
+    bool isInside = _isInsideAnyPolygon(location);
 
-    if (!isCurrentlyInside && isInsideGeofence) {
-      // User just left the geofence
-      _triggerIntenseWarning();
-    } else if (isCurrentlyInside && !isInsideGeofence) {
-      // User returned to the geofence
-      _cancelIntenseWarning();
+    if (!isInside && isInsideGeofence) {
+      // User exited the geofence
+      NotificationService.triggerTestNotification(
+        title: 'Boundary Alert',
+        body: 'You have left the training area!',
+      );
     }
 
-    setState(() => isInsideGeofence = isCurrentlyInside);
+    setState(() => isInsideGeofence = isInside);
   }
 
-  void _triggerIntenseWarning() {
-    // 1. Trigger notification with high priority
-    NotificationService.triggerTestNotification(
-      title: 'BOUNDARY BREACHED!',
-      body: 'RETURN TO TRAINING AREA IMMEDIATELY!',
-    );
-
-    // 2. Vibrate device
-    Vibration.vibrate(pattern: [500, 1000, 500, 1000, 500, 2000]);
-
-    // 3. Play alarm sound
-    _audioPlayer.resume();
-
-    // 4. Show popup if app is in foreground
-    if (isAppInForeground) {
-      _showIntenseWarning();
-    }
-
-    setState(() => isWarningActive = true);
-  }
-
-  void _cancelIntenseWarning() {
-    // Stop all warnings
-    _audioPlayer.pause();
-    Vibration.cancel();
-    _dismissActiveDialog();
-
-    setState(() => isWarningActive = false);
-  }
-
-  Future<void> _showIntenseWarning() async {
-    // Dismiss any existing dialog
-    _dismissActiveDialog();
-
-    final completer = Completer<AlertDialog>();
-    _activeDialogCompleter = completer;
-
-    // System sound for dialog appearance
-    SystemSound.play(SystemSoundType.alert);
-
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
-        child: AlertDialog(
-          backgroundColor: Colors.red[900],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.yellow, size: 36),
-              SizedBox(width: 15),
-              Expanded(
-                child: Text(
-                  'BOUNDARY ALERT!',
-                  style: TextStyle(
-                    color: Colors.yellow,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'You have left the authorized training area!\n\nReturn immediately to avoid disciplinary action.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              height: 1.4,
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: Text(
-                'ACKNOWLEDGE',
-                style: TextStyle(
-                  color: Colors.yellow,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              onPressed: () {
-                _audioPlayer.pause();
-                Vibration.cancel();
-                Navigator.of(context).pop();
-                completer.complete();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (completer == _activeDialogCompleter) {
-      _activeDialogCompleter = null;
-    }
-  }
-
-  bool _isInsideAnyPolygon(LatLng testPoint) {
+  bool _isInsideAnyPolygon(LatLng point) {
     for (Polygon polygon in polygons) {
-      if (_isPointInPolygon(testPoint, polygon.points)) {
+      if (_isPointInPolygon(point, polygon.points)) {
         return true;
       }
     }
@@ -352,13 +184,14 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   }
 
   void _adjustCamera() {
-    if (mapController == null || polygons.isEmpty) return;
-
-    List<LatLng> allPoints = [];
-    for (var polygon in polygons) {
-      allPoints.addAll(polygon.points);
+    if (mapController == null ||
+        (currentLocation == null && polygons.isEmpty)) {
+      return;
     }
 
+    List<LatLng> allPoints = [];
+    if (currentLocation != null) allPoints.add(currentLocation!);
+    if (polygons.isNotEmpty) allPoints.addAll(polygons.first.points);
     if (allPoints.isEmpty) return;
 
     double minLat = allPoints.first.latitude;
@@ -373,14 +206,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
       maxLng = max(maxLng, point.longitude);
     }
 
-    // Add padding to ensure boundaries are visible
-    final padding = (maxLat - minLat) * 0.1;
-    minLat -= padding;
-    maxLat += padding;
-    minLng -= padding;
-    maxLng += padding;
-
-    mapController!.animateCamera(CameraUpdate.newLatLngBounds(
+    mapController.animateCamera(CameraUpdate.newLatLngBounds(
       LatLngBounds(
         southwest: LatLng(minLat, minLng),
         northeast: LatLng(maxLat, maxLng),
@@ -391,18 +217,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-
-    // Immediately center on current location if available
-    if (currentLocation != null) {
-      controller.animateCamera(
-        CameraUpdate.newLatLng(currentLocation!),
-      );
-    }
-
-    // Adjust view after short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (polygons.isNotEmpty) _adjustCamera();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _adjustCamera());
   }
 
   @override
@@ -470,7 +285,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
                       onMapCreated: _onMapCreated,
                       initialCameraPosition: CameraPosition(
                         target: currentLocation ?? const LatLng(0, 0),
-                        zoom: 16,
+                        zoom: 12,
                       ),
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
@@ -489,8 +304,8 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
                             const Icon(Icons.my_location, color: Colors.white),
                         onPressed: () {
                           if (currentLocation != null) {
-                            mapController?.animateCamera(
-                              CameraUpdate.newLatLngZoom(currentLocation!, 16),
+                            mapController.animateCamera(
+                              CameraUpdate.newLatLng(currentLocation!),
                             );
                           }
                         },
@@ -503,30 +318,15 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
                         right: 0,
                         child: Container(
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red[900],
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              )
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.warning, color: Colors.yellow),
-                              SizedBox(width: 10),
-                              Text(
-                                'ALERT: You left the training area!',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                          color: Colors.red.withOpacity(0.7),
+                          child: const Text(
+                            'You have left the training area!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),

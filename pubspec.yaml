@@ -44,6 +44,7 @@ dependencies:
   permission_handler:
   cached_network_image: ^3.3.1
   location:
+  vibration:
   google_fonts: ^4.0.4
   chewie: ^1.7.5 
   exponential_back_off: ^0.1.0+2
@@ -51,9 +52,12 @@ dependencies:
   hive: ^2.2.3
   flutter_cache_manager:
   intl:
+  audioplayers:
+  flutter_local_notifications:
   dio:
   mime:
   flutter_html:
+  firebase_messaging:
 
 
 
@@ -67,6 +71,7 @@ dependencies:
 
   google_api_headers: ^1.6.0
   url_launcher: ^6.3.1
+  firebase_core: 
 
 
 dev_dependencies:

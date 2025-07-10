@@ -8,6 +8,9 @@
     <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- ✅ Notification permission for Android 13+ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Optional Sensor -->
     <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
 
@@ -16,7 +19,7 @@
         android:label="cartie"
         android:icon="@mipmap/ic_launcher">
 
-        <!-- ✅ Google Maps API Key in the correct place -->
+        <!-- ✅ Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc" />

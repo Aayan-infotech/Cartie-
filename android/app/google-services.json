@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "680321999109",
+    "project_id": "cartie-b84dd",
+    "storage_bucket": "cartie-b84dd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:680321999109:android:bff82992d86cb8ebb4576c",
+        "android_client_info": {
+          "package_name": "com.ionicinvestments.cartiecartsafe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxSTu_WFLG8T9Oc4cpRucEvkizzarzevc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

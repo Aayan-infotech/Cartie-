@@ -266,6 +266,13 @@ class _AssessmentScreenState extends State<AssessmentScreen>
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
+    // Filter out options with "N/A" text
+    final validOptions = question.options.where((option) => option.text != "N/A").toList();
+    // Find the original index of selected answer in the filtered list
+    final selectedIndex = _selectedAnswers[index] != null 
+        ? validOptions.indexWhere((opt) => opt.id == question.options[_selectedAnswers[index]!].id)
+        : null;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -293,10 +300,10 @@ class _AssessmentScreenState extends State<AssessmentScreen>
               ),
             ),
             const SizedBox(height: 30),
-            ...question.options.asMap().entries.map((entry) {
+            ...validOptions.asMap().entries.map((entry) {
               final optionIndex = entry.key;
               final option = entry.value;
-              final isSelected = _selectedAnswers[index] == optionIndex;
+              final isSelected = selectedIndex == optionIndex;
 
               return _OptionCard(
                 optionText: option.text,
@@ -305,9 +312,11 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                 showResults: _showResults,
                 onTap: () {
                   if (!_showResults) {
+                    // Find the original index of this option in the unfiltered list
+                    final originalIndex = question.options.indexWhere((opt) => opt.id == option.id);
                     _animationController.reset();
                     _animationController.forward();
-                    setState(() => _selectedAnswers[index] = optionIndex);
+                    setState(() => _selectedAnswers[index] = originalIndex);
                   }
                 },
               );
@@ -493,7 +502,6 @@ class _AssessmentScreenState extends State<AssessmentScreen>
     final quiz = provider.quiz;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    // final textTheme = theme.textTheme;
 
     return WillPopScope(
       onWillPop: _onWillPop,

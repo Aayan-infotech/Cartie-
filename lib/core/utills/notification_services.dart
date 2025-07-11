@@ -58,7 +58,7 @@ class NotificationService {
 
       var androidNotificationDetails = AndroidNotificationDetails(
         "com.hunt30.coyotex",
-        "Coyotex",
+        "Cartie",
         importance: Importance.high,
         styleInformation: bigTextStyleInformation,
         priority: Priority.high,

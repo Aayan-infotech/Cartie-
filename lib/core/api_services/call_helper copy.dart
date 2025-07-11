@@ -3,11 +3,8 @@ import 'dart:convert';
 
 import 'package:cartie/core/utills/constant.dart';
 import 'package:cartie/core/utills/shared_pref_util.dart';
-import 'package:cartie/features/login_signup_flow/login_screen.dart';
-import 'package:cartie/main.dart';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class ApiResponse {
@@ -240,18 +237,8 @@ class CallHelper {
         _refreshCompleter?.complete();
         _isRefreshing = false;
         return true;
-      } else {
-        navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => LoginScreen()),
-          (route) => false, // removes all previous routes
-        );
       }
-    } catch (_) {
-         navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => LoginScreen()),
-          (route) => false, // removes all previous routes
-        );
-    }
+    } catch (_) {}
 
     _refreshCompleter?.complete();
     _isRefreshing = false;

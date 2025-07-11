@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/utills/constant.dart' as constant;
@@ -75,28 +76,149 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   }
 
   void _dismissActiveDialog() {
-    if (_activeDialogCompleter != null &&
-        !_activeDialogCompleter!.isCompleted) {
+    if (_activeDialogCompleter != null && !_activeDialogCompleter!.isCompleted) {
       Navigator.of(context, rootNavigator: true).pop();
       _activeDialogCompleter = null;
     }
   }
 
-  Future<void> _initializeData() async {
-    setState(() => isLoading = true);
-    try {
+
+Future<void> _initializeData() async {
+  setState(() => isLoading = true);
+  try {
+    if (Platform.isAndroid) {
       await _requestLocationPermission();
-      await _getCurrentLocation();
-      await _fetchGeofenceData();
-      _startLocationMonitoring();
-      setState(() => isLoading = false);
-    } catch (e) {
-      print("Error initializing data: $e");
-      setState(() {
-        hasError = true;
-        isLoading = false;
-      });
     }
+    await _getCurrentLocation();
+    await _fetchGeofenceData();
+    _startLocationMonitoring();
+    setState(() => isLoading = false);
+  } catch (e) {
+    print("Error initializing data: $e");
+    setState(() {
+      hasError = true;
+      isLoading = false;
+    });
+    _showPermissionErrorDialog(e.toString());
+  }
+}
+
+  Future<void> _showPermissionErrorDialog(String error) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Location Permission Required'),
+        content: Text(
+          'This app requires location permissions to function properly. '
+          'Error: $error\n\nPlease enable location permissions in settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await openAppSettings();
+            },
+            child: Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _requestLocationPermission() async {
+    var status = await Permission.location.status;
+    
+    if (status.isDenied) {
+      if (Platform.isIOS) {
+        status = await Permission.locationWhenInUse.request();
+        if (status.isGranted) {
+          status = await Permission.locationAlways.request();
+        }
+      } else {
+        status = await Permission.location.request();
+      }
+    }
+    
+    if (status.isPermanentlyDenied) {
+      await _showPermissionDeniedDialog();
+      throw Exception('Location permission permanently denied');
+    }
+    
+    if (!status.isGranted) {
+      throw Exception('Location permission denied');
+    }
+    
+    if (Platform.isIOS) {
+      await _checkPreciseLocation();
+    }
+  }
+
+  Future<void> _checkPreciseLocation() async {
+    if (await Permission.locationWhenInUse.serviceStatus.isDisabled) {
+      throw Exception('Location services are disabled');
+    }
+
+    final accuracy = await Geolocator.getLocationAccuracy();
+    if (accuracy == LocationAccuracyStatus.reduced) {
+      final shouldOpenSettings = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Precise Location Required'),
+          content: Text(
+            'This app requires precise location to accurately monitor your position. '
+            'Please enable Precise Location in Settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldOpenSettings == true) {
+        await openAppSettings();
+        throw Exception('Precise location not enabled');
+      }
+    }
+  }
+
+  Future<void> _showPermissionDeniedDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Location Permission Denied'),
+        content: Text(
+          'This app requires location permissions to function properly. '
+          'You have permanently denied location permissions. '
+          'Please enable them in app settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await openAppSettings();
+            },
+            child: Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _startPeriodicChecks() {
@@ -111,18 +233,6 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
         });
       }
     });
-  }
-
-  Future<void> _requestLocationPermission() async {
-    final status = await Permission.location.request();
-    if (!status.isGranted) {
-      throw Exception('Location permission denied');
-    }
-
-    // Request background permission
-    if (await Permission.locationAlways.request().isGranted) {
-      print("Background location permission granted");
-    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -214,10 +324,8 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
     bool isCurrentlyInside = _isInsideAnyPolygon(location);
 
     if (!isCurrentlyInside && isInsideGeofence) {
-      // User just left the geofence
       _triggerIntenseWarning();
     } else if (isCurrentlyInside && !isInsideGeofence) {
-      // User returned to the geofence
       _cancelIntenseWarning();
     }
 
@@ -225,19 +333,14 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   }
 
   void _triggerIntenseWarning() {
-    // 1. Trigger notification with high priority
     NotificationService.triggerTestNotification(
       title: 'BOUNDARY BREACHED!',
       body: 'RETURN TO TRAINING AREA IMMEDIATELY!',
     );
 
-    // 2. Vibrate device
     Vibration.vibrate(pattern: [500, 1000, 500, 1000, 500, 2000]);
-
-    // 3. Play alarm sound
     _audioPlayer.resume();
 
-    // 4. Show popup if app is in foreground
     if (isAppInForeground) {
       _showIntenseWarning();
     }
@@ -246,22 +349,18 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   }
 
   void _cancelIntenseWarning() {
-    // Stop all warnings
     _audioPlayer.pause();
     Vibration.cancel();
     _dismissActiveDialog();
-
     setState(() => isWarningActive = false);
   }
 
   Future<void> _showIntenseWarning() async {
-    // Dismiss any existing dialog
     _dismissActiveDialog();
 
     final completer = Completer<AlertDialog>();
     _activeDialogCompleter = completer;
 
-    // System sound for dialog appearance
     SystemSound.play(SystemSoundType.alert);
 
     await showDialog(
@@ -373,7 +472,6 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
       maxLng = max(maxLng, point.longitude);
     }
 
-    // Add padding to ensure boundaries are visible
     final padding = (maxLat - minLat) * 0.1;
     minLat -= padding;
     maxLat += padding;
@@ -392,14 +490,12 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
 
-    // Immediately center on current location if available
     if (currentLocation != null) {
       controller.animateCamera(
         CameraUpdate.newLatLng(currentLocation!),
       );
     }
 
-    // Adjust view after short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (polygons.isNotEmpty) _adjustCamera();
     });

@@ -143,7 +143,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
     provider.completeAssessment();
     var response = await provider.submitQuiz(submission);
     if (response.success) {
-      await provider.fetchCourseSections();
+      await provider.fetchCourseSections(context);
     }
     setState(() {
       isLoading = false;
@@ -199,8 +199,14 @@ class _AssessmentScreenState extends State<AssessmentScreen>
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Exit assessment screen
+              if (provider.quiz!.sectionId.isEmpty) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                // Navigator.pop(context); // Exit assessment screen
+              } else {
+                Navigator.of(context).pop();
+                // Navigator.pop(context); // Close dialog
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: colors.error,
@@ -267,10 +273,12 @@ class _AssessmentScreenState extends State<AssessmentScreen>
     final textTheme = theme.textTheme;
 
     // Filter out options with "N/A" text
-    final validOptions = question.options.where((option) => option.text != "N/A").toList();
+    final validOptions =
+        question.options.where((option) => option.text != "N/A").toList();
     // Find the original index of selected answer in the filtered list
-    final selectedIndex = _selectedAnswers[index] != null 
-        ? validOptions.indexWhere((opt) => opt.id == question.options[_selectedAnswers[index]!].id)
+    final selectedIndex = _selectedAnswers[index] != null
+        ? validOptions.indexWhere(
+            (opt) => opt.id == question.options[_selectedAnswers[index]!].id)
         : null;
 
     return SingleChildScrollView(
@@ -313,7 +321,8 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                 onTap: () {
                   if (!_showResults) {
                     // Find the original index of this option in the unfiltered list
-                    final originalIndex = question.options.indexWhere((opt) => opt.id == option.id);
+                    final originalIndex = question.options
+                        .indexWhere((opt) => opt.id == option.id);
                     _animationController.reset();
                     _animationController.forward();
                     setState(() => _selectedAnswers[index] = originalIndex);
@@ -327,20 +336,20 @@ class _AssessmentScreenState extends State<AssessmentScreen>
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.timer, color: colors.error),
-                    const SizedBox(width: 8),
-                    Text(
-                      _formatTime(provider.elapsedSeconds),
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: colors.error,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Icon(Icons.timer, color: colors.error),
+                //     const SizedBox(width: 8),
+                //     Text(
+                //       _formatTime(provider.elapsedSeconds),
+                //       style: textTheme.bodyLarge?.copyWith(
+                //         color: colors.error,
+                //         fontWeight: FontWeight.w600,
+                //       ),
+                //     ),
+                //   ],
+                // ),
                 IconButton(
                   icon: const Icon(Icons.pause),
                   onPressed: _showPauseDialog,
@@ -445,19 +454,26 @@ class _AssessmentScreenState extends State<AssessmentScreen>
             Column(
               children: [
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text("Back to Course"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.error,
-                    foregroundColor: colors.onError,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text("Back to Course"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.error,
+                      foregroundColor: colors.onError,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 30, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
+                    onPressed: () {
+                      if (provider.quiz!.sectionId.isEmpty) {
+                        Navigator.of(context).pop();
+                        // Navigator.of(context).pop();
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    } // => Navigator.of(context).pop(),
+                    ),
               ],
             ),
           ],

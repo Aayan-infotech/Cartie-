@@ -51,8 +51,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           children: [
                             GestureDetector(
                               onTap: () {
-                                NotificationService.triggerTestNotification(
-                                    body: 'new', title: "vikas");
+                                NotificationService.getDeviceToken();
+                                // NotificationService.triggerTestNotification(
+                                //     body: 'new', title: "vikas");
                               },
                               child: Text(
                                 "Hey There!",

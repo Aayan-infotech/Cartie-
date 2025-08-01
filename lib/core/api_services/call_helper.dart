@@ -26,7 +26,7 @@ class ApiResponseWithData<T> {
 }
 
 class CallHelper {
-  static const String baseUrl = "http://18.209.91.97:9090/";
+  static const String baseUrl = "http://54.205.149.77:9090/";
   static const int timeoutInSeconds = 20;
   static const String internalServerErrorMessage = "Internal server error.";
   static bool _isRefreshing = false;
@@ -242,15 +242,15 @@ class CallHelper {
         return true;
       } else {
         navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => LoginScreen()),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false, // removes all previous routes
         );
       }
     } catch (_) {
-         navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => LoginScreen()),
-          (route) => false, // removes all previous routes
-        );
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false, // removes all previous routes
+      );
     }
 
     _refreshCompleter?.complete();

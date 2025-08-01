@@ -5,6 +5,7 @@ import 'package:cartie/core/models/certificate_model.dart';
 import 'package:cartie/core/models/course_model.dart';
 import 'package:cartie/core/models/question_submition.dart';
 import 'package:cartie/core/models/quiz_model.dart';
+import 'package:cartie/features/video_player/assisment_screen.dart';
 import 'package:cartie/features/view_certificate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -132,7 +133,7 @@ class CourseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchCourseSections() async {
+  Future<void> fetchCourseSections(BuildContext context) async {
     _isLoading = true;
     notifyListeners();
 
@@ -148,6 +149,17 @@ class CourseProvider extends ChangeNotifier {
                 totalDuration: '12',
                 totalVideos: 0);
       } else {
+        if (response.message == 'No nearby locations found') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const AssessmentScreen(
+                locationId: '',
+                sectionId: '',
+                sectionNumber: 1,
+              ),
+            ),
+          );
+        }
         _sections = Course(
             id: '',
             location: '',

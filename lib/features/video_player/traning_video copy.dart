@@ -56,15 +56,15 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
           if (mounted) {
             setState(() {
               _noVideoAvailable = true;
-              _errorMessage = _videoController.value.errorDescription ??
-                  'Video playback error';
+              _errorMessage = _videoController.value.errorDescription ?? 
+                              'Video playback error';
             });
           }
         }
       });
 
       await _videoController.initialize();
-
+      
       // Get video duration after initialization
       if (mounted) {
         setState(() {
@@ -91,7 +91,7 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
         ),
       );
 
-      if (mounted) {
+      if (mounted) { 
         setState(() => _isInitialized = true);
       }
     } catch (e) {
@@ -165,8 +165,8 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
               const SizedBox(height: 12),
               Text(
                 _errorMessage.isNotEmpty
-                    ? _errorMessage
-                    : "Failed to load safety video",
+                  ? _errorMessage
+                  : "Failed to load safety video",
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onBackground.withOpacity(0.7),
@@ -209,8 +209,8 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
                   top: 16,
                   right: 16,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(4),
@@ -237,7 +237,7 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
     final seconds = duration.inSeconds.remainder(60);
-
+    
     return [
       if (hours > 0) twoDigits(hours),
       twoDigits(minutes),

@@ -3,10 +3,8 @@ import 'dart:convert';
 import 'package:cartie/core/theme/app_theme.dart';
 import 'package:cartie/core/utills/branded_primary_button.dart';
 import 'package:cartie/core/utills/constant.dart';
-import 'package:cartie/features/dashboard/dashboard_screen.dart';
 import 'package:cartie/features/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -23,20 +21,42 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Prediction> _predictions = [];
   bool _isLoading = false;
-
-  // static const String _apiKey = kGoogleApiKey; // Replace with your key
+  LatLng? _targetLatLng; // Make nullable to track selection state
 
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(51.5416, -0.1431),
     zoom: 15,
   );
 
-  LatLng _targetLatLng = _initialPosition.target;
-  Future<void> _searchPlaces(String input) async {
-    if (input.isEmpty) {
-      setState(() => _predictions = []);
-      return;
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_handleTextChange);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_handleTextChange);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleTextChange() {
+    if (_searchController.text.isEmpty) {
+      setState(() {
+        _predictions = [];
+        _targetLatLng = null; // Clear coordinates when text is cleared
+      });
+    } else {
+      setState(() {
+        _targetLatLng = null; // Invalidate previous selection on text change
+      });
+      _searchPlaces(_searchController.text);
     }
+  }
+
+  Future<void> _searchPlaces(String input) async {
+    if (input.isEmpty) return;
 
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
@@ -47,15 +67,14 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
-        _predictions = data['predictions']
+        _predictions = (data['predictions'] as List)
             .map<Prediction>((p) => Prediction.fromJson(p))
             .toList();
       });
     }
-    print(_predictions);
   }
 
-  Future<void> _selectPlace(String placeId) async {
+  Future<void> _selectPlace(String placeId, String description) async {
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/place/details/json?'
       'place_id=$placeId&key=$kGoogleApiKey',
@@ -65,14 +84,20 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final location = data['result']['geometry']['location'];
-      final lat = location['lat'];
-      final lng = location['lng'];
+      final lat = location['lat'] as double;
+      final lng = location['lng'] as double;
       final target = LatLng(lat, lng);
 
       setState(() {
         _targetLatLng = target;
         _predictions = [];
       });
+
+      // Update text without triggering listener
+      _searchController
+        ..removeListener(_handleTextChange)
+        ..text = description
+        ..addListener(_handleTextChange);
 
       final GoogleMapController controller = await _mapController.future;
       controller.animateCamera(CameraUpdate.newLatLng(target));
@@ -81,47 +106,45 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
 
   void _submitLocation() async {
     final placeName = _searchController.text.trim();
-    final position = _targetLatLng;
 
-    if (placeName.isEmpty) {
+    // Validate both fields
+    if (placeName.isEmpty || _targetLatLng == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a location")),
+        const SnackBar(content: Text("Please select a valid location")),
       );
       return;
     }
 
-    setState(() => _isLoading = true); // Start loading
+    setState(() => _isLoading = true);
 
     try {
       final viewModel = Provider.of<UserViewModel>(context, listen: false);
-      var response = await viewModel.addLocation(placeName, position);
+      var response = await viewModel.addLocation(placeName, _targetLatLng!);
       if (response.success) {
-        print("Location added: $placeName at $position");
         AppTheme.showSuccessDialog(context, "Location updated successfully",
-            onConfirm: () {
-          Navigator.of(context).pop();
-        });
+            onConfirm: () => Navigator.of(context).pop());
       } else {
-        AppTheme.showSuccessDialog(context, response.message, onConfirm: () {
-          Navigator.of(context).pop();
-        });
+        AppTheme.showSuccessDialog(context, response.message,
+            onConfirm: () => Navigator.of(context).pop());
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to add location: $e")),
       );
     } finally {
-      setState(() => _isLoading = false); // Stop loading
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
+    final isButtonEnabled =
+        _searchController.text.isNotEmpty && _targetLatLng != null;
 
     return Scaffold(
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
                 GoogleMap(
@@ -156,7 +179,6 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                             horizontal: 16,
                           ),
                         ),
-                        onChanged: _searchPlaces,
                       ),
                       if (_predictions.isNotEmpty)
                         Container(
@@ -165,15 +187,12 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                             shrinkWrap: true,
                             itemCount: _predictions.length,
                             itemBuilder: (context, index) => ListTile(
-                              title: Text(
+                              title: Text(_predictions[index].description,
+                                  style: const TextStyle(color: Colors.white)),
+                              onTap: () => _selectPlace(
+                                _predictions[index].placeId,
                                 _predictions[index].description,
-                                style: const TextStyle(color: Colors.white),
                               ),
-                              onTap: () {
-                                _selectPlace(_predictions[index].placeId);
-                                _searchController.text =
-                                    _predictions[index].description;
-                              },
                             ),
                           ),
                         ),
@@ -187,7 +206,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: BrandedPrimaryButton(
-                      isEnabled: true,
+                      isEnabled: isButtonEnabled,
                       name: "Select",
                       onPressed: _submitLocation,
                     ),
@@ -207,8 +226,8 @@ class Prediction {
 
   factory Prediction.fromJson(Map<String, dynamic> json) {
     return Prediction(
-      description: json['description'],
-      placeId: json['place_id'],
+      description: json['description'] as String,
+      placeId: json['place_id'] as String,
     );
   }
 }

@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
                   onTap: () {
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
-                      return const FullScreenVideoScreen(
+                      return  FullScreenVideoScreen(
                         videoUrl:
                             'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
                       );
@@ -101,7 +101,7 @@ class _HomePageState extends State<HomePage> {
                       return CertificateScreen();
                     }));
                   },
-                  child: DashboardCard(
+                  child: const DashboardCard(
                       icon: Icons.verified, label: "All Certifications")),
             ],
           ),

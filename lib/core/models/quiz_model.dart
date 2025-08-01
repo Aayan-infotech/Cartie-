@@ -6,10 +6,9 @@ class QuizSection {
 
   factory QuizSection.fromJson(Map<String, dynamic> json) {
     return QuizSection(
-      sectionId: json['sectionId'],
-      questions: (json['questions'] as List)
-          .map((q) => Question.fromJson(q))
-          .toList(),
+      sectionId: json['sectionId'] ?? '',
+      questions:
+          (json['questions'] as List).map((q) => Question.fromJson(q)).toList(),
     );
   }
 
@@ -32,9 +31,8 @@ class Question {
     return Question(
       id: json['_id'],
       question: json['question'],
-      options: (json['options'] as List)
-          .map((opt) => Option.fromJson(opt))
-          .toList(),
+      options:
+          (json['options'] as List).map((opt) => Option.fromJson(opt)).toList(),
     );
   }
 

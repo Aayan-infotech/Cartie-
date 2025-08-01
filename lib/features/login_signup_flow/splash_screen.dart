@@ -5,6 +5,7 @@ import 'package:cartie/features/dashboard/dashboard_screen.dart';
 import 'package:cartie/features/login_signup_flow/login_screen.dart';
 import 'package:cartie/features/login_signup_flow/welcome_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/theme_provider.dart';
 
@@ -57,8 +58,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<ThemeProvider>(context,listen: false);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor:
+          provider.themeMode == ThemeMode.light ? Colors.white : Colors.black,
       body: Center(
         child: Image.asset("assets/images/logo.png"),
       ),

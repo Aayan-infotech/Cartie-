@@ -18,8 +18,10 @@ class ThemeProvider with ChangeNotifier {
 
   /// Load saved theme mode from preferences
   Future<void> init() async {
-    final String? savedTheme = await SharedPrefUtil.getValue(theme,'') as String ;
-    if (savedTheme != null) {
+    final String? savedTheme =
+        await SharedPrefUtil.getValue(theme, '') as String?;
+
+    if (savedTheme != null && savedTheme.isNotEmpty) {
       switch (savedTheme) {
         case 'light':
           _themeMode = ThemeMode.light;
@@ -30,10 +32,14 @@ class ThemeProvider with ChangeNotifier {
         case 'system':
           _themeMode = ThemeMode.system;
           break;
+        default:
+          _themeMode = ThemeMode.light;
+          break;
       }
     } else {
-      _themeMode = ThemeMode.dark; // fallback default
+      _themeMode = ThemeMode.light; // fallback default
     }
+
     notifyListeners();
   }
 }

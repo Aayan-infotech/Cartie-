@@ -42,7 +42,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     _courseProvider.addListener(_onProviderUpdate);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      _courseProvider.fetchCourseSections();
+      _courseProvider.fetchCourseSections(context);
     });
   }
 
@@ -252,7 +252,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         final currentVideo = _allVideos[_currentVideoIndex];
         if (currentPosition < _videoController!.value.duration) {
           await _courseProvider.updateVideoProgress(
-            locationId: _courseProvider.sections!.location,
+            locationId: _courseProvider.sections.location,
             sectionId: currentVideo.sectionId,
             videoId: currentVideo.id,
             watchedDuration: currentPosition.inSeconds.toString(),
@@ -280,7 +280,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       final currentVideo = _allVideos[_currentVideoIndex];
       if (currentPosition < _videoController!.value.duration) {
         _courseProvider.updateVideoProgress(
-          locationId: _courseProvider.sections!.location,
+          locationId: _courseProvider.sections.location,
           sectionId: currentVideo.sectionId,
           videoId: currentVideo.id,
           watchedDuration: currentPosition.inSeconds.toString(),
@@ -320,7 +320,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               ? _allVideos[_currentVideoIndex]
               : null;
 
-          return provider.sections.location.isEmpty
+          // return provider.sections.sections.isEmpty
+          //     ? _buildEmptySectionPlaceholder(colorScheme)
+          //     : provider.sections.sections.first.videos.isEmpty
+          return provider.sections.sections.isEmpty
               ? _buildEmptySectionPlaceholder(colorScheme)
               : Column(children: [
                   _isInitialized &&
@@ -532,7 +535,6 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       ),
                       const SizedBox(height: 16),
                       BrandedPrimaryButton(
-                        // FIX: Only enable if section is completed AND test not passed
                         isEnabled:
                             section.isSectionCompleted && !section.isTestPass,
                         name: section.isTestPass ? "Passed" : "Take Assessment",

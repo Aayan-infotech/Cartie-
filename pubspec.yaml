@@ -52,8 +52,7 @@ dependencies:
   hive: ^2.2.3
   flutter_cache_manager:
   intl:
-  audioplayers:
-  flutter_local_notifications:
+  flutter_local_notifications: 17.0.0
   dio:
   mime:
   flutter_html:
@@ -61,17 +60,20 @@ dependencies:
 
 
 
-  video_player: 
+  # video_player: 
   image_picker: ^1.0.4
   # slider_button: ^2.1.0
   slider_button_lite: ^1.0.1
   provider: ^6.1.4
   geocoding: ^3.0.0
   country_code_text_field: ^1.1.2
+  video_compress:
 
   google_api_headers: ^1.6.0
   url_launcher: ^6.3.1
   firebase_core: 
+  cached_video_player_plus: ^3.0.3
+  better_player_plus: ^1.0.5
 
 
 dev_dependencies:

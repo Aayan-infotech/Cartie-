@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:io';
-import 'package:audioplayers/audioplayers.dart';
+// import 'package:audioplayers/audioplayers.dart';
 import 'package:cartie/core/api_services/call_helper.dart';
 import 'package:cartie/core/utills/constant.dart' as constant;
 import 'package:cartie/core/utills/notification_services.dart';
@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:flutter/services.dart';
@@ -32,7 +33,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   bool isWarningActive = false;
   StreamSubscription<Position>? positionStream;
   Timer? _periodicCheckTimer;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  // final AudioPlayer _audioPlayer = AudioPlayer();
   Completer<AlertDialog>? _activeDialogCompleter;
 
   final Color primaryColor = Colors.red[900]!;
@@ -61,8 +62,8 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
   }
 
   void _setupAudio() async {
-    await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-    await _audioPlayer.setSourceAsset('sounds/alarm.mp3');
+    // await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    // await _audioPlayer.setSourceAsset('sounds/alarm.mp3');
   }
 
   @override
@@ -70,38 +71,39 @@ class _TrainingMapScreenState extends State<TrainingMapScreen>
     WidgetsBinding.instance.removeObserver(this);
     positionStream?.cancel();
     _periodicCheckTimer?.cancel();
-    _audioPlayer.dispose();
+    // _audioPlayer.dispose();
     _dismissActiveDialog();
     super.dispose();
   }
 
   void _dismissActiveDialog() {
-    if (_activeDialogCompleter != null && !_activeDialogCompleter!.isCompleted) {
+    if (_activeDialogCompleter != null &&
+        !_activeDialogCompleter!.isCompleted) {
       Navigator.of(context, rootNavigator: true).pop();
       _activeDialogCompleter = null;
     }
   }
 
+  Future<void> _initializeData() async {
+    setState(() => isLoading = true);
+    try {
+      if (Platform.isAndroid) {
+        await _requestLocationPermission();
+      }
+      await _getCurrentLocation();
+      await _fetchGeofenceData();
+      _startLocationMonitoring();
+      setState(() => isLoading = false);
+    } catch (e) {
+      print("Error initializing data: $e");
+      setState(() {
+        hasError = true;
+        isLoading = false;
+      });
 
-Future<void> _initializeData() async {
-  setState(() => isLoading = true);
-  try {
-    if (Platform.isAndroid) {
-      await _requestLocationPermission();
+      // _showPermissionErrorDialog(e.toString());
     }
-    await _getCurrentLocation();
-    await _fetchGeofenceData();
-    _startLocationMonitoring();
-    setState(() => isLoading = false);
-  } catch (e) {
-    print("Error initializing data: $e");
-    setState(() {
-      hasError = true;
-      isLoading = false;
-    });
-    _showPermissionErrorDialog(e.toString());
   }
-}
 
   Future<void> _showPermissionErrorDialog(String error) async {
     await showDialog(
@@ -132,7 +134,7 @@ Future<void> _initializeData() async {
 
   Future<void> _requestLocationPermission() async {
     var status = await Permission.location.status;
-    
+
     if (status.isDenied) {
       if (Platform.isIOS) {
         status = await Permission.locationWhenInUse.request();
@@ -143,16 +145,16 @@ Future<void> _initializeData() async {
         status = await Permission.location.request();
       }
     }
-    
+
     if (status.isPermanentlyDenied) {
       await _showPermissionDeniedDialog();
       throw Exception('Location permission permanently denied');
     }
-    
+
     if (!status.isGranted) {
       throw Exception('Location permission denied');
     }
-    
+
     if (Platform.isIOS) {
       await _checkPreciseLocation();
     }
@@ -185,7 +187,7 @@ Future<void> _initializeData() async {
           ],
         ),
       );
-      
+
       if (shouldOpenSettings == true) {
         await openAppSettings();
         throw Exception('Precise location not enabled');
@@ -339,7 +341,7 @@ Future<void> _initializeData() async {
     );
 
     Vibration.vibrate(pattern: [500, 1000, 500, 1000, 500, 2000]);
-    _audioPlayer.resume();
+    // _audioPlayer.resume();
 
     if (isAppInForeground) {
       _showIntenseWarning();
@@ -349,7 +351,7 @@ Future<void> _initializeData() async {
   }
 
   void _cancelIntenseWarning() {
-    _audioPlayer.pause();
+    // _audioPlayer.pause();
     Vibration.cancel();
     _dismissActiveDialog();
     setState(() => isWarningActive = false);
@@ -409,7 +411,7 @@ Future<void> _initializeData() async {
                 ),
               ),
               onPressed: () {
-                _audioPlayer.pause();
+                // _audioPlayer.pause();
                 Vibration.cancel();
                 Navigator.of(context).pop();
                 completer.complete();

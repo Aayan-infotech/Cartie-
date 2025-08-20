@@ -5,11 +5,13 @@ import 'package:cartie/core/models/certificate_model.dart';
 import 'package:cartie/core/models/course_model.dart';
 import 'package:cartie/core/models/question_submition.dart';
 import 'package:cartie/core/models/quiz_model.dart';
+import 'package:cartie/core/theme/app_theme.dart';
 import 'package:cartie/features/video_player/assisment_screen.dart';
 import 'package:cartie/features/view_certificate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class CourseProvider extends ChangeNotifier {
   final CourseSectionApi _api = CourseSectionApi();
@@ -22,7 +24,7 @@ class CourseProvider extends ChangeNotifier {
   bool isPaused = false;
 
   /// Fetch quiz/assessment data
-  QuizSection? quiz = QuizSection(sectionId: '', questions: []);
+  QuizSection? quiz = QuizSection(sectionId: '', questions: [], locationId: '');
   int _elapsedSeconds = 0;
   bool _assessmentInProgress = false;
   Timer? _timer;
@@ -61,11 +63,11 @@ class CourseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchQuiz({
-    required String locationId,
-    required String sectionId,
-    required int sectionNumber,
-  }) async {
+  Future<void> fetchQuiz(
+      {required String locationId,
+      required String sectionId,
+      required int sectionNumber,
+      required BuildContext context}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -81,7 +83,7 @@ class CourseProvider extends ChangeNotifier {
           // Use quizData
           quiz = QuizSection.fromJson(quizData);
         } else {
-          quiz = QuizSection(sectionId: '', questions: []);
+          quiz = QuizSection(sectionId: '', questions: [], locationId: '');
           // Handle empty or invalid data case
         }
         // final quizData = response.data['data'][0];
@@ -89,8 +91,12 @@ class CourseProvider extends ChangeNotifier {
         // //_sectionQuizzes[sectionId] = QuizSection.fromJson(quizData);
         // print("Quiz fetched: ${quiz!.questions.length} questions loaded.");
       } else {
-        if (kDebugMode) {
-          print("Failed to fetch quiz: ${response.message}");
+        if (response.message == 'You have already passed this assessment.') {
+          AppTheme.showSuccessDialog(
+              context, "You have already passed this assessment.",
+              onConfirm: () {
+            Navigator.of(context).pop();
+          });
         }
       }
     } catch (e) {
@@ -155,7 +161,17 @@ class CourseProvider extends ChangeNotifier {
               builder: (context) => const AssessmentScreen(
                 locationId: '',
                 sectionId: '',
-                sectionNumber: 1,
+                sectionNumber: 0,
+              ),
+            ),
+          );
+        } else if (response.message == 'Current location not found for user') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const AssessmentScreen(
+                locationId: '',
+                sectionId: '',
+                sectionNumber: 0,
               ),
             ),
           );
@@ -194,7 +210,8 @@ class CourseProvider extends ChangeNotifier {
   }
 
   late Certificate _certificate;
-  Future<void> getCertificate(String locationId, BuildContext context) async {
+  Future<void> getCertificate(String locationId, BuildContext context,
+      {bool isAssisment = false}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -207,9 +224,11 @@ class CourseProvider extends ChangeNotifier {
           MaterialPageRoute(
             builder: (context) => CertificateDetailScreen(
               certificate: _certificate,
+              isAssisment: true,
             ),
           ),
         );
+
         print(_certificate);
       } else {}
     } finally {

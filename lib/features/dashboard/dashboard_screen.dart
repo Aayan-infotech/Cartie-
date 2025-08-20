@@ -43,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 backgroundColor: theme.scaffoldBackgroundColor,
                 appBar: _currentIndex == 0
                     ? AppBar(
+                        forceMaterialTransparency: true,
                         automaticallyImplyLeading: false,
                         backgroundColor: theme.scaffoldBackgroundColor,
                         elevation: 0,
@@ -51,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           children: [
                             GestureDetector(
                               onTap: () {
-                                NotificationService.getDeviceToken();
+                                // NotificationService.getDeviceToken();
                                 // NotificationService.triggerTestNotification(
                                 //     body: 'new', title: "vikas");
                               },

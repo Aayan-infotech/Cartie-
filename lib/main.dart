@@ -1,5 +1,4 @@
 // lib/main.dart
-
 import 'package:cartie/core/utills/notification_services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -89,7 +88,7 @@ class _MyAppState extends State<MyApp> {
       navigatorKey: navigatorKey,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: themeProvider.themeMode,
+      themeMode: themeProvider.themeMode, // ✅ Dynamic system/user override
       debugShowCheckedModeBanner: false,
       home: const SplashScreen(),
     );

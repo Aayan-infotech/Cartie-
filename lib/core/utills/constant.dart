@@ -1,5 +1,5 @@
 var kGoogleApiKey =
-    "AIzaSyDgsuj1uAGFuJBsUaTdl0lFllr56DnIp9Y"; //"AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
+    "AIzaSyC71kjvJKqTMemfxMek8zBR9Px2T1IB-Ak"; //"AIzaSyDgsuj1uAGFuJBsUaTdl0lFllr56DnIp9Y";
 String accessTokenPref = "accessToken-pref";
 String getDeviceToken = "deviceToken-pref";
 String refreshTokenPref = "refreshToken-pref";
@@ -12,7 +12,7 @@ String publishableKey =
 const userProfileLocalFilePath = 'user_profile.json'; // Save path
 
 // var kGoogleApiKey =
-//     "AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc"; //"AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
+//     "AIzaSyC71kjvJKqTMemfxMek8zBR9Px2T1IB-Ak"; //"AIzaSyC71kjvJKqTMemfxMek8zBR9Px2T1IB-Ak";
 //vikas
 // var kGoogleApiKey="AIzaSyDGBBUl2gpsGC3L4X6PoEIBk5s5Mc8JNIM";
 

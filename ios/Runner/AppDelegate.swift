@@ -13,7 +13,7 @@ import GoogleMaps // ✅ Import Google Maps SDK
     GeneratedPluginRegistrant.register(with: self)
     
     // ✅ Initialize Google Maps with your API key
-    GMSServices.provideAPIKey("AIzaSyDgsuj1uAGFuJBsUaTdl0lFllr56DnIp9Y")
+    GMSServices.provideAPIKey("AIzaSyC71kjvJKqTMemfxMek8zBR9Px2T1IB-Ak")
     
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

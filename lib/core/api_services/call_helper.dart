@@ -26,7 +26,7 @@ class ApiResponseWithData<T> {
 }
 
 class CallHelper {
-  static const String baseUrl = "http://54.205.149.77:9090/";
+  static const String baseUrl = "http://44.217.145.210:9090/";
   static const int timeoutInSeconds = 20;
   static const String internalServerErrorMessage = "Internal server error.";
   static bool _isRefreshing = false;
@@ -214,6 +214,49 @@ class CallHelper {
   }
 
   /// Refreshes the token and updates stored credentials.
+  // Future<bool> _refreshToken() async {
+  //   if (_isRefreshing) {
+  //     await _refreshCompleter?.future;
+  //     return (SharedPrefUtil.getValue(accessTokenPref, "") as String)
+  //         .isNotEmpty;
+  //   }
+
+  //   _isRefreshing = true;
+  //   _refreshCompleter = Completer<void>();
+
+  //   try {
+  //     String refreshToken =
+  //         SharedPrefUtil.getValue(refreshTokenPref, "") as String;
+  //     final response = await http.post(
+  //       Uri.parse("${baseUrl}api/users/refreshToken"),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({"refreshToken": refreshToken}),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final Map<String, dynamic> data = jsonDecode(response.body);
+  //       String newAccessToken = data["accessToken"] ?? "";
+  //       await SharedPrefUtil.setValue(accessTokenPref, newAccessToken);
+  //       _refreshCompleter?.complete();
+  //       _isRefreshing = false;
+  //       return true;
+  //     } else {
+  //       navigatorKey.currentState?.pushAndRemoveUntil(
+  //         MaterialPageRoute(builder: (_) => const LoginScreen()),
+  //         (route) => false, // removes all previous routes
+  //       );
+  //     }
+  //   } catch (_) {
+  //     navigatorKey.currentState?.pushAndRemoveUntil(
+  //       MaterialPageRoute(builder: (_) => const LoginScreen()),
+  //       (route) => false, // removes all previous routes
+  //     );
+  //   }
+
+  //   _refreshCompleter?.complete();
+  //   _isRefreshing = false;
+  //   return false;
+  // }
   Future<bool> _refreshToken() async {
     if (_isRefreshing) {
       await _refreshCompleter?.future;
@@ -227,6 +270,7 @@ class CallHelper {
     try {
       String refreshToken =
           SharedPrefUtil.getValue(refreshTokenPref, "") as String;
+
       final response = await http.post(
         Uri.parse("${baseUrl}api/users/refreshToken"),
         headers: {'Content-Type': 'application/json'},
@@ -236,25 +280,39 @@ class CallHelper {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         String newAccessToken = data["accessToken"] ?? "";
+
         await SharedPrefUtil.setValue(accessTokenPref, newAccessToken);
         _refreshCompleter?.complete();
         _isRefreshing = false;
         return true;
-      } else {
-        navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false, // removes all previous routes
-        );
       }
     } catch (_) {
-      navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false, // removes all previous routes
-      );
+      _refreshCompleter?.complete();
+      _isRefreshing = false;
+
+      // Immediate navigation to Login screen
+      Future.microtask(() {
+        navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      });
+
+      // Handle any error silently
     }
 
+    // If we reach here, refresh failed
     _refreshCompleter?.complete();
     _isRefreshing = false;
+
+    // Immediate navigation to Login screen
+    Future.microtask(() {
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    });
+
     return false;
   }
 

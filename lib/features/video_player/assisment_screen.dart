@@ -80,10 +80,10 @@ class _AssessmentScreenState extends State<AssessmentScreen>
   void _fetchQuizData() async {
     final provider = context.read<CourseProvider>();
     await provider.fetchQuiz(
-      locationId: widget.locationId,
-      sectionId: widget.sectionId,
-      sectionNumber: widget.sectionNumber,
-    );
+        locationId: widget.locationId,
+        sectionId: widget.sectionId,
+        sectionNumber: widget.sectionNumber,
+        context: context);
     if (provider.quiz != null) {
       setState(() {
         _selectedAnswers = List.filled(provider.quiz!.questions.length, null);
@@ -106,6 +106,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
           content: Text('Please answer all questions before submitting.'),
         ),
       );
+      setState(() => isLoading = false);
       return;
     }
 
@@ -133,7 +134,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
 
     // Submit in background
     final submission = QuestionSubmission(
-      locationId: widget.locationId,
+      locationId: provider.quiz!.locationId ?? '',
       sectionId: widget.sectionId,
       sectionNumber: widget.sectionNumber.toString(),
       duration: provider.elapsedSeconds,
@@ -143,7 +144,8 @@ class _AssessmentScreenState extends State<AssessmentScreen>
     provider.completeAssessment();
     var response = await provider.submitQuiz(submission);
     if (response.success) {
-      await provider.fetchCourseSections(context);
+      if (widget.sectionId.isNotEmpty)
+        await provider.fetchCourseSections(context);
     }
     setState(() {
       isLoading = false;
@@ -199,14 +201,8 @@ class _AssessmentScreenState extends State<AssessmentScreen>
           ),
           TextButton(
             onPressed: () {
-              if (provider.quiz!.sectionId.isEmpty) {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-                // Navigator.pop(context); // Exit assessment screen
-              } else {
-                Navigator.of(context).pop();
-                // Navigator.pop(context); // Close dialog
-              }
+              Navigator.of(context).pop();
+              Navigator.of(context).pop();
             },
             style: TextButton.styleFrom(
               foregroundColor: colors.error,
@@ -229,7 +225,9 @@ class _AssessmentScreenState extends State<AssessmentScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Section ${widget.sectionNumber} Assessment",
+            (context.read<CourseProvider>().quiz!.questions.isEmpty)
+                ? "No Question Found"
+                : "Assessment",
             style: textTheme.headlineMedium?.copyWith(
               color: colors.onBackground,
               fontWeight: FontWeight.bold,
@@ -245,8 +243,12 @@ class _AssessmentScreenState extends State<AssessmentScreen>
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: () {
-              context.read<CourseProvider>().startAssessment();
-              setState(() {});
+              if (context.read<CourseProvider>().quiz!.questions.isEmpty) {
+                Navigator.of(context).pop();
+              } else {
+                context.read<CourseProvider>().startAssessment();
+                setState(() {});
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: colors.primary,
@@ -258,7 +260,9 @@ class _AssessmentScreenState extends State<AssessmentScreen>
               textStyle: textTheme.titleLarge,
               elevation: 4,
             ),
-            child: const Text("Start Assessment"),
+            child: (context.read<CourseProvider>().quiz!.questions.isEmpty)
+                ? Text('Back')
+                : const Text("Start Assessment"),
           ),
         ],
       ),
@@ -312,8 +316,11 @@ class _AssessmentScreenState extends State<AssessmentScreen>
               final optionIndex = entry.key;
               final option = entry.value;
               final isSelected = selectedIndex == optionIndex;
+              // Convert index to letter (0=A, 1=B, etc.)
+              final prefix = String.fromCharCode(65 + optionIndex);
 
               return _OptionCard(
+                prefix: prefix,
                 optionText: option.text,
                 isSelected: isSelected,
                 isCorrect: option.isCorrect,
@@ -336,20 +343,6 @@ class _AssessmentScreenState extends State<AssessmentScreen>
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Row(
-                //   mainAxisAlignment: MainAxisAlignment.center,
-                //   children: [
-                //     Icon(Icons.timer, color: colors.error),
-                //     const SizedBox(width: 8),
-                //     Text(
-                //       _formatTime(provider.elapsedSeconds),
-                //       style: textTheme.bodyLarge?.copyWith(
-                //         color: colors.error,
-                //         fontWeight: FontWeight.w600,
-                //       ),
-                //     ),
-                //   ],
-                // ),
                 IconButton(
                   icon: const Icon(Icons.pause),
                   onPressed: _showPauseDialog,
@@ -384,20 +377,35 @@ class _AssessmentScreenState extends State<AssessmentScreen>
           child: const Text("Previous"),
         ),
         ElevatedButton(
-          onPressed: () => isLastQuestion
-              ? _calculateScore()
-              : _pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                ),
+          onPressed: _selectedAnswers[currentIndex] != null
+              ? () {
+                  if (isLastQuestion) {
+                    _calculateScore();
+                  } else {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                }
+              : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red[800],
+            backgroundColor: _selectedAnswers[currentIndex] != null
+                ? Colors.red[800]
+                : Colors.grey, // Visual feedback for disabled state
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
           ),
-          child: Text(isLastQuestion ? "Submit" : "Next"),
+          child: Text(
+            isLastQuestion ? "Submit" : "Next",
+            style: TextStyle(
+              color: _selectedAnswers[currentIndex] != null
+                  ? Colors.white
+                  : Colors.white70,
+            ),
+          ),
         ),
       ],
     );
@@ -411,7 +419,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
 
     final totalQuestions = _selectedAnswers.length;
     final percentage = (_score / totalQuestions) * 100;
-    final isPassed = percentage >= 60;
+    final isPassed = percentage >= 70;
 
     return Center(
       child: Container(
@@ -455,7 +463,9 @@ class _AssessmentScreenState extends State<AssessmentScreen>
               children: [
                 ElevatedButton.icon(
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text("Back to Course"),
+                    label: isPassed
+                        ? const Text('Get Certificate')
+                        : const Text("Back to Course"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.error,
                       foregroundColor: colors.onError,
@@ -466,14 +476,14 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                       ),
                     ),
                     onPressed: () {
-                      if (provider.quiz!.sectionId.isEmpty) {
-                        Navigator.of(context).pop();
-                        // Navigator.of(context).pop();
+                      if (isPassed) {
+                        provider.getCertificate(
+                            provider.quiz!.locationId, context,
+                            isAssisment: true);
                       } else {
                         Navigator.of(context).pop();
                       }
-                    } // => Navigator.of(context).pop(),
-                    ),
+                    }),
               ],
             ),
           ],
@@ -529,7 +539,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                     backgroundColor: colors.background,
                     iconTheme: IconThemeData(color: colors.onBackground),
                     title: Text(
-                      "Section ${widget.sectionNumber} Assessment",
+                      "Assessment",
                       style: TextStyle(color: colors.onBackground),
                     ),
                     actions: [
@@ -573,6 +583,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
 }
 
 class _OptionCard extends StatelessWidget {
+  final String prefix; // New prefix property
   final String optionText;
   final bool isSelected;
   final bool isCorrect;
@@ -580,6 +591,7 @@ class _OptionCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _OptionCard({
+    required this.prefix,
     required this.optionText,
     required this.isSelected,
     required this.isCorrect,
@@ -605,6 +617,10 @@ class _OptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final defaultBorderColor = colors.onSurface.withOpacity(0.5);
+    final borderColor = _getBorderColor(context);
+    final circleBorderColor =
+        borderColor == Colors.transparent ? defaultBorderColor : borderColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
@@ -619,13 +635,13 @@ class _OptionCard extends StatelessWidget {
             color: colors.surfaceVariant,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: _getBorderColor(context),
+              color: borderColor,
               width: 2,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: _getBorderColor(context).withOpacity(0.5),
+                      color: borderColor.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
                     ),
@@ -634,6 +650,29 @@ class _OptionCard extends StatelessWidget {
           ),
           child: Row(
             children: [
+              // Prefix letter container
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: isSelected ? circleBorderColor : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: circleBorderColor,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    prefix,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : circleBorderColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 15),
               Expanded(
                 child: Text(
                   optionText,

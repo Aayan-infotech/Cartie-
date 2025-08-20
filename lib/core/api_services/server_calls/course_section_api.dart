@@ -31,19 +31,20 @@ class CourseSectionApi extends ApiBase {
   Future<ApiResponseWithData<Map<String, dynamic>>> getAssisment(
       String locationId, String sectionId, int sectionNumber) async {
     Map<String, dynamic> data = {
-      "locationId": locationId,
+      "locationId": locationId.isEmpty ? null : locationId,
       "isSectionCompleted": true,
-      "sectionId": sectionId,
-      "sectionNumber": sectionNumber
+      "sectionId": sectionId.isEmpty ? null : sectionId,
+      "sectionNumber": sectionNumber == 0 ? null : sectionNumber
     };
     return await CallHelper().postWithData<Map<String, dynamic>>(
-        'api/user/asses/getAsses', data, {} // Default data in case of failure
+        'api/user/asses/getAsses', {}, {} // Default data in case of failure
         );
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> submitQuiz(
       QuestionSubmission questionSubmission) async {
     Map<String, dynamic> data = questionSubmission.toJson();
+    print(data);
     return await CallHelper().postWithData<Map<String, dynamic>>(
         'api/user/asses/SubmitTest', data, {} // Default data in case of failure
         );

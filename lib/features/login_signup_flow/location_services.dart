@@ -25,15 +25,13 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
 
   Future<void> _handleLocation() async {
     try {
-
       final position =
           await LocationService.getCurrentLocationWithPermission(context);
       final placeName =
           await LocationService.getPlaceNameFromCoordinates(position);
-     
 
-      // await viewModel.addLocation(
-      //     placeName, LatLng(position.latitude, position.longitude));
+      await viewModel.addLocation(
+          placeName, LatLng(position.latitude, position.longitude));
 
       Navigator.pushReplacement(
         context,

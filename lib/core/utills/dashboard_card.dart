@@ -23,21 +23,20 @@ class DashboardCard extends StatelessWidget {
         final padding = cardWidth * 0.05;
         final theme = Theme.of(context);
         final colors = theme.colorScheme;
-        final textTheme = theme.textTheme;
-        final provider = Provider.of<ThemeProvider>(context, listen: false);
+        final brightness = theme.brightness; // ✅ check system brightness
+        final isDark = brightness == Brightness.dark;
 
         return Container(
-          //color: Colors.yellow,
           child: Stack(
             children: [
               // Background
-              Positioned(
+              Positioned.fill(
                 child: Align(
                   alignment: Alignment.center,
                   child: Container(
                     height: cardHeight * 0.6,
                     decoration: BoxDecoration(
-                      color: provider.themeMode == ThemeMode.dark
+                      color: isDark
                           ? colors.primary
                           : colors.primary.withOpacity(.3),
                       borderRadius: BorderRadius.circular(cardWidth * 0.1),
@@ -55,17 +54,13 @@ class DashboardCard extends StatelessWidget {
                     child: Container(
                       padding: EdgeInsets.all(padding),
                       decoration: BoxDecoration(
-                        color: provider.themeMode == ThemeMode.dark
-                            ? Colors.white
-                            : Colors.red,
+                        color: isDark ? Colors.white : Colors.red,
                         borderRadius: BorderRadius.circular(cardWidth * 0.08),
                       ),
                       child: Icon(
                         icon,
                         size: iconSize,
-                        color: provider.themeMode == ThemeMode.dark
-                            ? Colors.black
-                            : Colors.white,
+                        color: isDark ? Colors.black : Colors.white,
                       ),
                     ),
                   ),
@@ -76,9 +71,7 @@ class DashboardCard extends StatelessWidget {
                       height: 70,
                       padding: EdgeInsets.all(padding),
                       decoration: BoxDecoration(
-                        color: provider.themeMode == ThemeMode.dark
-                            ? Colors.white
-                            : Colors.red,
+                        color: isDark ? Colors.white : Colors.red,
                         borderRadius: BorderRadius.circular(cardWidth * 0.08),
                       ),
                       child: Center(
@@ -90,9 +83,7 @@ class DashboardCard extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: fontSize,
-                            color: provider.themeMode == ThemeMode.dark
-                                ? Colors.black
-                                : Colors.white,
+                            color: isDark ? Colors.black : Colors.white,
                           ),
                         ),
                       ),

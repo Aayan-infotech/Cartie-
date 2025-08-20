@@ -56,8 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         GestureDetector(
-                          onTap: () {
-                          },
+                          onTap: () {},
                           child: Text(
                             "Profile",
                             style: TextStyle(
@@ -82,27 +81,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         SettingTile(
                           onTap: () {
                             Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => CertificateScreen(),
+                              builder: (context) => const CertificateScreen(),
                             ));
                           },
                           icon: Icons.settings,
                           title: "Certifications",
-                          // trailing: Container(
-                          //   padding: const EdgeInsets.symmetric(
-                          //       horizontal: 8, vertical: 4),
-                          //   decoration: BoxDecoration(
-                          //     color: Colors.white,
-                          //     borderRadius: BorderRadius.circular(20),
-                          //   ),
-                          //   child: Text(
-                          //     "Active +9",
-                          //     style: TextStyle(
-                          //       color: colors.primary,
-                          //       fontWeight: FontWeight.bold,
-                          //       fontSize: 12,
-                          //     ),
-                          //   ),
-                          // ),
                         ),
                         const SizedBox(height: 10),
                         SettingTile(

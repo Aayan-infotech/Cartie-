@@ -27,7 +27,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -164,7 +165,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                                 Text(
                                   "Your account has been created!",
                                   style: textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onBackground.withOpacity(0.7),
+                                    color: colorScheme.onBackground
+                                        .withOpacity(0.7),
                                   ),
                                 ),
                               ],
@@ -179,7 +181,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                               isPassword: true,
                               validator: _oldPasswordValidator,
                             ),
-                          if (widget.isChangePassword) const SizedBox(height: 20),
+                          if (widget.isChangePassword)
+                            const SizedBox(height: 20),
                           BrandedTextField(
                             controller: _passwordController,
                             labelText: "New Password",

@@ -27,9 +27,9 @@ class QuestionSubmission {
 
   Map<String, dynamic> toJson() {
     return {
-      'locationId': locationId,
-      'sectionId': sectionId,
-      'sectionNumber': sectionNumber,
+      'locationId':locationId.isEmpty?null: locationId,
+      'sectionId':sectionId.isEmpty?null: sectionId,
+      'sectionNumber':sectionNumber.isEmpty?null: sectionNumber,
       'duration': duration,
       'questions': questions.map((q) => q.toJson()).toList(),
     };

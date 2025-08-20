@@ -61,7 +61,6 @@ class AuthAPIs {
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-       
         print("Upload success: $responseBody");
         return true;
       } else {

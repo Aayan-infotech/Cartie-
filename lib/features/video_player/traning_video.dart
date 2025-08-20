@@ -34,7 +34,7 @@ class _FullScreenVideoScreenState extends State<FullScreenVideoScreen> {
     try {
       final provider = Provider.of<DashBoardProvider>(context, listen: false);
       await provider.getSeftyVideo();
-
+      print("Safety Video URL: ${provider.seftyVideoUrl}");
       if (provider.seftyVideoUrl.isEmpty) {
         if (mounted) {
           setState(() {

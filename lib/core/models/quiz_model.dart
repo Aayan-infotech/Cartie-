@@ -1,11 +1,13 @@
 class QuizSection {
   final String sectionId;
+  final String locationId;
   final List<Question> questions;
 
-  QuizSection({required this.sectionId, required this.questions});
+  QuizSection({required this.locationId,required this.sectionId, required this.questions});
 
   factory QuizSection.fromJson(Map<String, dynamic> json) {
     return QuizSection(
+      locationId: json['locationId']??'',
       sectionId: json['sectionId'] ?? '',
       questions:
           (json['questions'] as List).map((q) => Question.fromJson(q)).toList(),

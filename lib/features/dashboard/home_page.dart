@@ -3,6 +3,7 @@ import 'package:cartie/features/dashboard/LSV_practics_screen.dart';
 import 'package:cartie/features/dashboard/cart_rules_screen.dart';
 import 'package:cartie/features/dashboard/certificate_screen.dart';
 import 'package:cartie/features/dashboard/local_map_area.dart';
+import 'package:cartie/features/video_player/assisment_screen.dart';
 import 'package:cartie/features/video_player/training_details.dart';
 import 'package:cartie/features/video_player/traning_video.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,7 @@ class _HomePageState extends State<HomePage> {
                   onTap: () {
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
-                      return  FullScreenVideoScreen(
+                      return FullScreenVideoScreen(
                         videoUrl:
                             'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
                       );
@@ -56,10 +57,19 @@ class _HomePageState extends State<HomePage> {
                       icon: Icons.play_circle, label: "Watch Safety Video")),
               GestureDetector(
                   onTap: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) {
-                      return const TrainingDetailScreen();
-                    }));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AssessmentScreen(
+                          locationId: '',
+                          sectionId: '',
+                          sectionNumber: 0,
+                        ),
+                      ),
+                    );
+                    // Navigator.of(context)
+                    //     .push(MaterialPageRoute(builder: (context) {
+                    //   return const TrainingDetailScreen();
+                    // }));
                   },
                   child: const DashboardCard(
                       icon: Icons.quiz, label: "   Attempt Test     ")),

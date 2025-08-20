@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../utills/constant.dart';
 import '../utills/shared_pref_util.dart';
 
 class ThemeProvider with ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.dark; // Default to dark mode
+  ThemeMode _themeMode = ThemeMode.system; // ✅ Default: system theme
 
   ThemeMode get themeMode => _themeMode;
 
@@ -33,11 +31,11 @@ class ThemeProvider with ChangeNotifier {
           _themeMode = ThemeMode.system;
           break;
         default:
-          _themeMode = ThemeMode.light;
+          _themeMode = ThemeMode.system; // fallback
           break;
       }
     } else {
-      _themeMode = ThemeMode.light; // fallback default
+      _themeMode = ThemeMode.system; // ✅ no saved theme → system
     }
 
     notifyListeners();

@@ -74,7 +74,11 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     }
   }
 
+  bool isPlaceLoading = false;
   Future<void> _selectPlace(String placeId, String description) async {
+    setState(() {
+      isPlaceLoading = true;
+    });
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/place/details/json?'
       'place_id=$placeId&key=$kGoogleApiKey',
@@ -91,6 +95,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       setState(() {
         _targetLatLng = target;
         _predictions = [];
+        isPlaceLoading = false;
       });
 
       // Update text without triggering listener
@@ -124,7 +129,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         AppTheme.showSuccessDialog(context, "Location updated successfully",
             onConfirm: () => Navigator.of(context).pop());
       } else {
-        AppTheme.showSuccessDialog(context, response.message,
+        AppTheme.showErrorDialog(context, "Failed to add location",
             onConfirm: () => Navigator.of(context).pop());
       }
     } catch (e) {
@@ -143,7 +148,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         _searchController.text.isNotEmpty && _targetLatLng != null;
 
     return Scaffold(
-      body: _isLoading
+      body: _isLoading || isPlaceLoading
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -207,7 +212,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: BrandedPrimaryButton(
                       isEnabled: isButtonEnabled,
-                      name: "Select",
+                      name: "Submit",
                       onPressed: _submitLocation,
                     ),
                   ),

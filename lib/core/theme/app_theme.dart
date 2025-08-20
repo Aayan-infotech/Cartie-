@@ -90,6 +90,7 @@ class AppTheme {
   static void showSuccessDialog(BuildContext context, String message,
       {VoidCallback? onConfirm}) {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) => AlertDialog(
         icon: Icon(Icons.check_circle, color: Colors.green.shade600, size: 48),
@@ -129,6 +130,7 @@ class AppTheme {
   static void showErrorDialog(BuildContext context, String message,
       {VoidCallback? onConfirm}) {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (context) => AlertDialog(
         icon: Icon(Icons.error,

@@ -1,19 +1,46 @@
 import 'package:cartie/core/models/certificate_model.dart';
 import 'package:cartie/core/theme/app_theme.dart';
+import 'package:cartie/features/providers/course_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class CertificateDetailScreen extends StatelessWidget {
+class CertificateDetailScreen extends StatefulWidget {
   final Certificate certificate;
+  bool isAssisment;
 
-  const CertificateDetailScreen({super.key, required this.certificate});
+  CertificateDetailScreen(
+      {this.isAssisment = false, super.key, required this.certificate});
+
+  @override
+  State<CertificateDetailScreen> createState() =>
+      _CertificateDetailScreenState();
+}
+
+class _CertificateDetailScreenState extends State<CertificateDetailScreen> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    Provider.of<CourseProvider>(context, listen: false).getAllCertificate();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(certificate.certificateName),
+        leading: IconButton(
+            onPressed: () {
+              if (widget.isAssisment) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              } else {
+                Navigator.of(context).pop();
+              }
+            },
+            icon: Icon(Icons.arrow_back)),
+        title: Text(widget.certificate.certificateName),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -41,7 +68,7 @@ class CertificateDetailScreen extends StatelessWidget {
       child: Column(
         children: [
           // Image Preview Section
-          if (certificate.certificateUrl.isNotEmpty)
+          if (widget.certificate.certificateUrl.isNotEmpty)
             _buildImagePreview(context)
           else
             _buildImagePlaceholder(context),
@@ -52,7 +79,7 @@ class CertificateDetailScreen extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  certificate.certificateName,
+                  widget.certificate.certificateName,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary,
@@ -61,7 +88,7 @@ class CertificateDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Certificate #${certificate.certificateNumber}',
+                  'Certificate #${widget.certificate.certificateNumber}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.grey[600],
                       ),
@@ -70,25 +97,25 @@ class CertificateDetailScreen extends StatelessWidget {
                 _buildInfoRow(
                   context,
                   'Issued by',
-                  certificate.certificateIssuedBy,
+                  widget.certificate.certificateIssuedBy,
                   Icons.business_center,
                 ),
                 _buildInfoRow(
                   context,
                   'Issue Date',
-                  _formatDate(certificate.issueDate),
+                  _formatDate(widget.certificate.issueDate),
                   Icons.calendar_month,
                 ),
                 _buildInfoRow(
                   context,
                   'Valid Until',
-                  _formatDate(certificate.validUntil),
+                  _formatDate(widget.certificate.validUntil),
                   Icons.event_available,
                 ),
                 _buildInfoRow(
                   context,
                   'Location ID',
-                  certificate.locationId,
+                  widget.certificate.locationId,
                   Icons.location_pin,
                 ),
               ],
@@ -104,7 +131,7 @@ class CertificateDetailScreen extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         CachedNetworkImage(
-          imageUrl: certificate.certificateUrl,
+          imageUrl: widget.certificate.certificateUrl,
           width: double.infinity,
           height: 220,
           fit: BoxFit.cover,
@@ -216,31 +243,31 @@ class CertificateDetailScreen extends StatelessWidget {
               _buildDetailItem(
                 context,
                 'Certificate ID',
-                certificate.id,
+                widget.certificate.id,
               ),
               const Divider(height: 24),
               _buildDetailItem(
                 context,
                 'User ID',
-                certificate.userId,
+                widget.certificate.userId,
               ),
               const Divider(height: 24),
               _buildDetailItem(
                 context,
                 'Issued At',
-                _formatDateTime(certificate.issuedAt),
+                _formatDateTime(widget.certificate.issuedAt),
               ),
               const Divider(height: 24),
               _buildDetailItem(
                 context,
                 'Created',
-                _formatDateTime(certificate.createdAt),
+                _formatDateTime(widget.certificate.createdAt),
               ),
               const Divider(height: 24),
               _buildDetailItem(
                 context,
                 'Updated',
-                _formatDateTime(certificate.updatedAt),
+                _formatDateTime(widget.certificate.updatedAt),
               ),
             ],
           ),
@@ -278,14 +305,14 @@ class CertificateDetailScreen extends StatelessWidget {
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
-        if (certificate.certificateUrl.isNotEmpty)
+        if (widget.certificate.certificateUrl.isNotEmpty)
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.picture_as_pdf),
               label: const Text('Download PDF Certificate'),
               onPressed: () => _launchUrl(
-                  context, certificate.certificateUrl, 'certificate'),
+                  context, widget.certificate.certificateUrl, 'certificate'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
@@ -294,15 +321,16 @@ class CertificateDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-        if (certificate.certificateUrl.isNotEmpty) const SizedBox(height: 12),
-        if (certificate.certificateUrl.isNotEmpty)
+        if (widget.certificate.certificateUrl.isNotEmpty)
+          const SizedBox(height: 12),
+        if (widget.certificate.certificateUrl.isNotEmpty)
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.image),
               label: const Text('Download Image'),
-              onPressed: () =>
-                  _launchUrl(context, certificate.certificateUrl, 'image'),
+              onPressed: () => _launchUrl(
+                  context, widget.certificate.certificateUrl, 'image'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(color: Theme.of(context).colorScheme.primary),

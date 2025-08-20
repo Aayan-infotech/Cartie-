@@ -548,10 +548,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               context,
                               listen: false);
                           await courseProvider.fetchQuiz(
-                            locationId: _courseProvider.sections.location,
-                            sectionId: section.id,
-                            sectionNumber: section.sectionNumber,
-                          );
+                              locationId: _courseProvider.sections.location,
+                              sectionId: section.id,
+                              sectionNumber: section.sectionNumber,
+                              context: context);
 
                           if (mounted) {
                             Navigator.of(context).push(

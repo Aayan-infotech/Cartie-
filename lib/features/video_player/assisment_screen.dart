@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:cartie/core/models/question_submit.dart';
 import 'package:cartie/core/models/question_submition.dart';
+import 'package:cartie/features/question_review_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cartie/core/models/quiz_model.dart';
@@ -92,6 +94,7 @@ class _AssessmentScreenState extends State<AssessmentScreen>
   }
 
   bool isLoading = false;
+  late QuizResult quizResult;
   void _calculateScore() async {
     setState(() {
       isLoading = true;
@@ -144,6 +147,9 @@ class _AssessmentScreenState extends State<AssessmentScreen>
     provider.completeAssessment();
     var response = await provider.submitQuiz(submission);
     if (response.success) {
+      var data = response.data['data'];
+      print(data);
+      quizResult = QuizResult.fromJson(data);
       if (widget.sectionId.isNotEmpty)
         await provider.fetchCourseSections(context);
     }
@@ -462,10 +468,38 @@ class _AssessmentScreenState extends State<AssessmentScreen>
             Column(
               children: [
                 ElevatedButton.icon(
-                    icon: const Icon(Icons.arrow_back),
-                    label: isPassed
-                        ? const Text('Get Certificate')
-                        : const Text("Back to Course"),
+                  icon: isPassed
+                      ? const Icon(Icons.workspace_premium) // Certificate icon
+                      : const Icon(Icons.arrow_back), // Back arrow
+                  label: isPassed
+                      ? const Text('Get Certificate')
+                      : const Text("Back to Course"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.error,
+                    foregroundColor: colors.onError,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (isPassed) {
+                      provider.getCertificate(
+                        provider.quiz!.locationId,
+                        context,
+                        isAssisment: true,
+                      );
+                    } else {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                if (isPassed) const SizedBox(height: 10),
+                if (isPassed)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.quiz), // Review questions icon
+                    label: const Text('Review Questions'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.error,
                       foregroundColor: colors.onError,
@@ -476,14 +510,19 @@ class _AssessmentScreenState extends State<AssessmentScreen>
                       ),
                     ),
                     onPressed: () {
-                      if (isPassed) {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) {
+                          return QuizResultsScreen(
+                            quizResult: quizResult,
+                          );
+                        },
+                      )).then((_) {
                         provider.getCertificate(
                             provider.quiz!.locationId, context,
-                            isAssisment: true);
-                      } else {
-                        Navigator.of(context).pop();
-                      }
-                    }),
+                            isAssisment: true, isReview: true);
+                      });
+                    },
+                  ),
               ],
             ),
           ],

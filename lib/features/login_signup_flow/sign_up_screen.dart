@@ -148,7 +148,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-
   void _fetchCityStateFromZip(String zipCode) async {
     if (zipCode.length >= 5) {
       try {

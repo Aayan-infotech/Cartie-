@@ -211,7 +211,7 @@ class CourseProvider extends ChangeNotifier {
 
   late Certificate _certificate;
   Future<void> getCertificate(String locationId, BuildContext context,
-      {bool isAssisment = false}) async {
+      {bool isAssisment = false,bool isReview=false}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -219,7 +219,8 @@ class CourseProvider extends ChangeNotifier {
       var response = await _api.getCertificate(locationId);
       if (response.success) {
         _certificate = Certificate.fromJson(response.data['data']);
-        Navigator.push(
+        if(!isReview) {
+          Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => CertificateDetailScreen(
@@ -228,6 +229,7 @@ class CourseProvider extends ChangeNotifier {
             ),
           ),
         );
+        }
 
         print(_certificate);
       } else {}

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cartie/core/models/quiz_model.dart';
 import 'package:cartie/core/theme/app_theme.dart';
 import 'package:cartie/core/utills/branded_primary_button.dart';
 import 'package:cartie/core/utills/constant.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart'; // Add this import
 
 class LocationSearchScreen extends StatefulWidget {
   const LocationSearchScreen({super.key});
@@ -21,7 +23,8 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Prediction> _predictions = [];
   bool _isLoading = false;
-  LatLng? _targetLatLng; // Make nullable to track selection state
+  LatLng? _targetLatLng;
+  Position? _currentPosition; // Add this to store current position
 
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(51.5416, -0.1431),
@@ -35,21 +38,96 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    // _getCurrentLocation(); // Get current location on init
+    _getCurrentLocation();
+
+    super.didChangeDependencies();
+  }
+
+  @override
   void dispose() {
     _searchController.removeListener(_handleTextChange);
     _searchController.dispose();
     super.dispose();
   }
 
+  // Add this method to get current location
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final newLatLng = LatLng(position.latitude, position.longitude);
+
+      setState(() {
+        _currentPosition = position;
+        _targetLatLng = newLatLng;
+      });
+
+      // Ensure map is ready before updating camera
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final controller = await _mapController.future;
+        controller.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: newLatLng,
+              zoom: 16, // adjust zoom level
+              tilt: 0,
+              bearing: 0,
+            ),
+          ),
+        );
+      });
+
+      await _getAddressFromLatLng(newLatLng);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error getting location: $e")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // Add this method to reverse geocode coordinates
+  Future<void> _getAddressFromLatLng(LatLng latLng) async {
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/geocode/json?'
+      'latlng=${latLng.latitude},${latLng.longitude}&key=$kGoogleApiKey',
+    );
+
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['status'] == 'OK') {
+        final results = data['results'] as List;
+        if (results.isNotEmpty) {
+          final address = results[0]['formatted_address'] as String;
+          _searchController
+            ..removeListener(_handleTextChange)
+            ..text = address
+            ..addListener(_handleTextChange);
+        }
+      }
+      // isButtonEnabled=true;
+      setState(() {});
+    }
+  }
+
   void _handleTextChange() {
     if (_searchController.text.isEmpty) {
       setState(() {
         _predictions = [];
-        _targetLatLng = null; // Clear coordinates when text is cleared
+        _targetLatLng = null;
       });
     } else {
       setState(() {
-        _targetLatLng = null; // Invalidate previous selection on text change
+        _targetLatLng = null;
       });
       _searchPlaces(_searchController.text);
     }
@@ -98,7 +176,6 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         isPlaceLoading = false;
       });
 
-      // Update text without triggering listener
       _searchController
         ..removeListener(_handleTextChange)
         ..text = description
@@ -112,7 +189,6 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
   void _submitLocation() async {
     final placeName = _searchController.text.trim();
 
-    // Validate both fields
     if (placeName.isEmpty || _targetLatLng == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select a valid location")),
@@ -157,7 +233,16 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                   onMapCreated: (controller) =>
                       _mapController.complete(controller),
                   myLocationEnabled: true,
+                  myLocationButtonEnabled: false, // Disable default button
                   zoomControlsEnabled: false,
+                  markers: _targetLatLng != null
+                      ? {
+                          Marker(
+                            markerId: const MarkerId('currentLocation'),
+                            position: _targetLatLng!,
+                          )
+                        }
+                      : {},
                 ),
                 Positioned(
                   top: height * 0.07,
@@ -204,6 +289,16 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                     ],
                   ),
                 ),
+                // Add current location button
+                // Positioned(
+                //   bottom: 80, // Position above the submit button
+                //   right: 20,
+                //   child: FloatingActionButton(
+                //     onPressed: _getCurrentLocation,
+                //     backgroundColor: Colors.white,
+                //     child: const Icon(Icons.my_location, color: Colors.black),
+                //   ),
+                // ),
                 Positioned(
                   bottom: 20,
                   left: 0,

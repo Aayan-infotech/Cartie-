@@ -65,7 +65,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                             Text(
-                              "Let's get certified for cart",
+                              "Please watch the safety video and attempt the test to get certified",
+                              maxLines: 2,
                               style: textTheme.bodySmall?.copyWith(
                                 color: colorScheme.secondary,
                               ),

@@ -22,7 +22,9 @@ class _CertificateDetailScreenState extends State<CertificateDetailScreen> {
   @override
   void initState() {
     // TODO: implement initState
-    Provider.of<CourseProvider>(context, listen: false).getAllCertificate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CourseProvider>(context, listen: false).getAllCertificate();
+    });
     super.initState();
   }
 

@@ -1,5 +1,7 @@
 import 'package:cartie/core/theme/theme_provider.dart';
+import 'package:cartie/core/utills/constant.dart';
 import 'package:cartie/core/utills/notification_services.dart';
+import 'package:cartie/core/utills/shared_pref_util.dart';
 import 'package:cartie/features/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:cartie/features/dashboard/certificate_screen.dart';
@@ -26,6 +28,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<UserViewModel>(context, listen: false);
+      String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+      String accessToken =
+          SharedPrefUtil.getValue(accessTokenPref, "") as String;
+      provider.getUserProfile(accessToken, userId);
+    });
     super.initState();
   }
 

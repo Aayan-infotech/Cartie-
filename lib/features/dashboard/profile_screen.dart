@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cartie/core/utills/constant.dart';
 import 'package:cartie/core/utills/shared_pref_util.dart';
 import 'package:cartie/features/dashboard/certificate_screen.dart';
 import 'package:cartie/features/dashboard/edit_profile_screen.dart';
@@ -32,16 +33,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
+  }
+
+  @override
+  void didChangeDependencies() async {
+    // TODO: implement
+    // WidgetsBinding.instance.addPostFrameCallback((_) async {
     //   final provider = Provider.of<UserViewModel>(context, listen: false);
-    //   provider.getUserProfile();
+    //   String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+    //   String accessToken =
+    //       SharedPrefUtil.getValue(accessTokenPref, "") as String;
+    //   provider.getUserProfile(accessToken, userId);
     // });
+
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+
+    final provider = Provider.of<UserViewModel>(context, listen: false);
+    String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+    String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
+    if (provider.user.name == 'Jhon') {
+      provider.getUserProfile(accessToken, userId);
+    }
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -119,6 +137,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 Widget buildProfileCard(BuildContext context, UserViewModel userProvider) {
   final theme = Theme.of(context);
   final colorScheme = theme.colorScheme;
+  String userName = SharedPrefUtil.getValue(userNameId, "") as String;
+  String userEmail = SharedPrefUtil.getValue(userEmailId, "") as String;
   return GestureDetector(
     onTap: () {
       Navigator.of(context).push(
@@ -157,7 +177,7 @@ Widget buildProfileCard(BuildContext context, UserViewModel userProvider) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userProvider.user.name,
+                  userName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -165,7 +185,7 @@ Widget buildProfileCard(BuildContext context, UserViewModel userProvider) {
                   ),
                 ),
                 Text(
-                  userProvider.user.email,
+                  userEmail,
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,

@@ -199,28 +199,35 @@ class AuthAPIs {
     );
   }
 
-  Future<ApiResponseWithData> getUserById(String token, String id) async {
-    // replace with your actual base URL
-    final String url = '${CallHelper.baseUrl}api/users/getProfile/$id';
+  // Future<ApiResponseWithData> getUserById(String token, String id) async {
+  //   // replace with your actual base URL
+  //   final String url = '${CallHelper.baseUrl}api/users/getProfile/$id';
 
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // Optional: use if auth is required
-        },
-      );
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse(url),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer $token', // Optional: use if auth is required
+  //       },
+  //     );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return ApiResponseWithData(data, true, message: "");
-      } else {
-        throw Exception('Failed to fetch user. Status: ${response.statusCode}');
-      }
-    } catch (e) {
-      rethrow;
-    }
+  //     if (response.statusCode == 200) {
+  //       final data = jsonDecode(response.body);
+  //       return ApiResponseWithData(data, true, message: "");
+  //     } else {
+  //       throw Exception('Failed to fetch user. Status: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> getUserById(
+      String token, String id) async {
+    Map<String, String> data = {};
+
+    return await CallHelper().getWithData('api/users/getProfile/$id', data);
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>>

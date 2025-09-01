@@ -15,7 +15,7 @@ class UserViewModel extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
   UserModel user = UserModel(
-  image: '',
+      image: '',
       name: "Jhon",
       email: 'Jhon@gmail.com',
       mobile: "123456789",
@@ -137,7 +137,7 @@ class UserViewModel extends ChangeNotifier {
 
   Future<void> getUserProfile(String token, String id,
       {bool forceRefresh = false}) async {
-    _setLoading(true);
+    // _setLoading(true);
     clearErrorMessage();
 
     // final startTime = DateTime.now(); // Start timing
@@ -153,6 +153,8 @@ class UserViewModel extends ChangeNotifier {
         } else {
           final jsonData = response.data['data'];
           user = UserModel.fromJson(jsonData);
+          SharedPrefUtil.setValue(userNameId, user.name);
+          SharedPrefUtil.setValue(userEmailId, user.email);
           print(user);
           notifyListeners();
           // Save to local storage

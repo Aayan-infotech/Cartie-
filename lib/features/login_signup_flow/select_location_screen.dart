@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:cartie/core/models/quiz_model.dart';
 import 'package:cartie/core/theme/app_theme.dart';
 import 'package:cartie/core/utills/branded_primary_button.dart';
 import 'package:cartie/core/utills/constant.dart';
@@ -9,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart'; // Add this import
+import 'package:geolocator/geolocator.dart';
 
 class LocationSearchScreen extends StatefulWidget {
   const LocationSearchScreen({super.key});
@@ -21,10 +20,13 @@ class LocationSearchScreen extends StatefulWidget {
 class _LocationSearchScreenState extends State<LocationSearchScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
   final TextEditingController _searchController = TextEditingController();
-  List<Prediction> _predictions = [];
+  final List<Prediction> _predictions = [];
+  final ValueNotifier<bool> _placeLoading = ValueNotifier(false);
+
   bool _isLoading = false;
   LatLng? _targetLatLng;
-  Position? _currentPosition; // Add this to store current position
+  Position? _currentPosition;
+  Timer? _debounce;
 
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(51.5416, -0.1431),
@@ -39,24 +41,20 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
 
   @override
   void didChangeDependencies() {
-    // TODO: implement didChangeDependencies
-    // _getCurrentLocation(); // Get current location on init
-    _getCurrentLocation();
-
+    // _getCurrentLocation();
     super.didChangeDependencies();
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.removeListener(_handleTextChange);
     _searchController.dispose();
     super.dispose();
   }
 
-  // Add this method to get current location
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoading = true);
-
     try {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -69,17 +67,11 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         _targetLatLng = newLatLng;
       });
 
-      // Ensure map is ready before updating camera
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         final controller = await _mapController.future;
         controller.animateCamera(
           CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: newLatLng,
-              zoom: 16, // adjust zoom level
-              tilt: 0,
-              bearing: 0,
-            ),
+            CameraPosition(target: newLatLng, zoom: 16),
           ),
         );
       });
@@ -94,7 +86,6 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     }
   }
 
-  // Add this method to reverse geocode coordinates
   Future<void> _getAddressFromLatLng(LatLng latLng) async {
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/geocode/json?'
@@ -114,28 +105,29 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
             ..addListener(_handleTextChange);
         }
       }
-      // isButtonEnabled=true;
-      setState(() {});
     }
   }
 
   void _handleTextChange() {
-    if (_searchController.text.isEmpty) {
-      setState(() {
-        _predictions = [];
-        _targetLatLng = null;
-      });
-    } else {
-      setState(() {
-        _targetLatLng = null;
-      });
-      _searchPlaces(_searchController.text);
-    }
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      final query = _searchController.text.trim();
+      if (query.isEmpty) {
+        setState(() {
+          _predictions.clear();
+          _targetLatLng = null;
+        });
+      } else {
+        _searchPlaces(query);
+      }
+    });
   }
 
   Future<void> _searchPlaces(String input) async {
     if (input.isEmpty) return;
 
+    _placeLoading.value = true;
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
       'input=$input&key=$kGoogleApiKey',
@@ -145,18 +137,19 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
-        _predictions = (data['predictions'] as List)
-            .map<Prediction>((p) => Prediction.fromJson(p))
-            .toList();
+        _predictions
+          ..clear()
+          ..addAll((data['predictions'] as List)
+              .map<Prediction>((p) => Prediction.fromJson(p))
+              .toList());
       });
     }
+    _placeLoading.value = false;
   }
 
-  bool isPlaceLoading = false;
   Future<void> _selectPlace(String placeId, String description) async {
-    setState(() {
-      isPlaceLoading = true;
-    });
+    _placeLoading.value = true;
+
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/place/details/json?'
       'place_id=$placeId&key=$kGoogleApiKey',
@@ -172,8 +165,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
 
       setState(() {
         _targetLatLng = target;
-        _predictions = [];
-        isPlaceLoading = false;
+        _predictions.clear();
       });
 
       _searchController
@@ -184,6 +176,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       final GoogleMapController controller = await _mapController.future;
       controller.animateCamera(CameraUpdate.newLatLng(target));
     }
+    _placeLoading.value = false;
   }
 
   void _submitLocation() async {
@@ -197,7 +190,6 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     }
 
     setState(() => _isLoading = true);
-
     try {
       final viewModel = Provider.of<UserViewModel>(context, listen: false);
       var response = await viewModel.addLocation(placeName, _targetLatLng!);
@@ -224,7 +216,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         _searchController.text.isNotEmpty && _targetLatLng != null;
 
     return Scaffold(
-      body: _isLoading || isPlaceLoading
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -233,7 +225,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                   onMapCreated: (controller) =>
                       _mapController.complete(controller),
                   myLocationEnabled: true,
-                  myLocationButtonEnabled: false, // Disable default button
+                  myLocationButtonEnabled: false,
                   zoomControlsEnabled: false,
                   markers: _targetLatLng != null
                       ? {
@@ -270,35 +262,55 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                           ),
                         ),
                       ),
-                      if (_predictions.isNotEmpty)
-                        Container(
-                          color: Colors.black.withOpacity(0.6),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: _predictions.length,
-                            itemBuilder: (context, index) => ListTile(
-                              title: Text(_predictions[index].description,
-                                  style: const TextStyle(color: Colors.white)),
-                              onTap: () => _selectPlace(
-                                _predictions[index].placeId,
-                                _predictions[index].description,
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _placeLoading,
+                        builder: (context, isLoading, _) {
+                          if (isLoading) {
+                            return Container(
+                              color: Colors.black.withOpacity(0.6),
+                              padding: const EdgeInsets.all(8),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
+                            );
+                          }
+                          if (_predictions.isNotEmpty) {
+                            return Container(
+                              color: Colors.black.withOpacity(0.6),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _predictions.length,
+                                itemBuilder: (context, index) => ListTile(
+                                  title: Text(
+                                    _predictions[index].description,
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  onTap: () => _selectPlace(
+                                    _predictions[index].placeId,
+                                    _predictions[index].description,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
                     ],
                   ),
                 ),
-                // Add current location button
-                // Positioned(
-                //   bottom: 80, // Position above the submit button
-                //   right: 20,
-                //   child: FloatingActionButton(
-                //     onPressed: _getCurrentLocation,
-                //     backgroundColor: Colors.white,
-                //     child: const Icon(Icons.my_location, color: Colors.black),
-                //   ),
-                // ),
+                Positioned(
+                  bottom: 90,
+                  right: 16,
+                  child: FloatingActionButton(
+                    heroTag: "current_location_btn",
+                    backgroundColor: Colors.white,
+                    child: const Icon(Icons.my_location, color: Colors.black),
+                    onPressed: _getCurrentLocation,
+                  ),
+                ),
                 Positioned(
                   bottom: 20,
                   left: 0,
